@@ -136,9 +136,7 @@
            DISPLAY (9, 15) "Inserte el pin de tarjeta:".
            ACCEPT DATA-ACCEPT
                IF ESC-PRESSED
-                   GO TO IMPRIMIR-CABECERA
-               ELSE
-                   GO TO P2.
+                   GO TO IMPRIMIR-CABECERA.
 
            OPEN I-O TARJETAS.
            IF FST NOT = 00

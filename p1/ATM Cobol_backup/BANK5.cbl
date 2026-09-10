@@ -121,20 +121,20 @@
            SET ENVIRONMENT 'COB_SCREEN_EXCEPTIONS' TO 'Y'.
 
            DISPLAY BLANK-SCREEN.
-           DISPLAY(2 26) "Cajero Automatico UnizarBank"
+           DISPLAY(2, 26) "Cajero Automatico UnizarBank"
                WITH FOREGROUND-COLOR IS 1.
 
 
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
-           DISPLAY(4 32) DIA.
-           DISPLAY(4 34) "-".
-           DISPLAY(4 35) MES.
-           DISPLAY(4 37) "-".
-           DISPLAY(4 38) ANO.
-           DISPLAY(4 44) HORAS.
-           DISPLAY(4 46) ":".
-           DISPLAY(4 47) MINUTOS.
+           DISPLAY(4, 32) DIA.
+           DISPLAY(4, 34) "-".
+           DISPLAY(4, 35) MES.
+           DISPLAY(4, 37) "-".
+           DISPLAY(4, 38) ANO.
+           DISPLAY(4, 44) HORAS.
+           DISPLAY(4, 46) ":".
+           DISPLAY(4, 47) MINUTOS.
 
 
 
@@ -188,7 +188,7 @@
                MOVE 0 TO SALDO-USUARIO-ENT
                MOVE 0 TO SALDO-USUARIO-DEC
                MOVE 0 TO CENT-SALDO-USER
-               GO TO PANTALLA-INGRESO
+               GO TO PANTALLA-INGRESO-INICIO
            END-IF.
 
            MOVE LAST-USER-MOV-NUM TO MOV-NUM.
@@ -210,24 +210,26 @@
 
 
        PANTALLA-INGRESO SECTION.
+
+       PANTALLA-INGRESO-INICIO.
            INITIALIZE EURENT-USUARIO.
            INITIALIZE EURDEC-USUARIO.
 
-           DISPLAY(24 33) "ESC - Finalizar ingreso efectivo".
-           DISPLAY(8 30) "Ingresar efectivo".
-           DISPLAY(10 19) "Saldo Actual: ".
+           DISPLAY(24, 33) "ESC - Finalizar ingreso efectivo".
+           DISPLAY(8, 30) "Ingresar efectivo".
+           DISPLAY(10, 19) "Saldo Actual: ".
 
            DISPLAY SALDO-DISPLAY.
 
-           DISPLAY(11 19) "Por favor,introduzca billetes".
-           DISPLAY(13 19) "Cantidad introducida:         ".
-           DISPLAY(13 48) ".".
-           DISPLAY(13 52) "EUR".
+           DISPLAY(11, 19) "Por favor,introduzca billetes".
+           DISPLAY(13, 19) "Cantidad introducida:         ".
+           DISPLAY(13, 48) ".".
+           DISPLAY(13, 52) "EUR".
 
        CONF2.
            ACCEPT ENTRADA-USUARIO ON EXCEPTION
                IF ESC-PRESSED THEN
-                   GO TO PANT
+                   GO TO PANT-INICIO
                ELSE
                    GO TO CONF2
                END-IF.
@@ -274,30 +276,31 @@
            WRITE MOVIMIENTO-REG INVALID KEY GO TO PSYS-ERR.
            CLOSE F-MOVIMIENTOS.
 
-           GO TO PANTALLA-INGRESO.
+           GO TO PANTALLA-INGRESO-INICIO.
 
 
 
 
        PANT SECTION.
 
+       PANT-INICIO.
            COMPUTE EURENT-USUARIO = (CENT-ACUMULADOR / 100).
            MOVE FUNCTION MOD(CENT-ACUMULADOR, 100)
                TO EURDEC-USUARIO.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(8 30) "Ingresar efectivo".
-           DISPLAY(10 19) "Se han recibido correctamente:".
-           DISPLAY(10 50) EURENT-USUARIO.
-           DISPLAY(10 58) EURDEC-USUARIO.
-           DISPLAY(10 57) ".".
-           DISPLAY(10 61) "EUR".
-           DISPLAY(11 19) "El saldo resultante es de:".
+           DISPLAY(8, 30) "Ingresar efectivo".
+           DISPLAY(10, 19) "Se han recibido correctamente:".
+           DISPLAY(10, 50) EURENT-USUARIO.
+           DISPLAY(10, 58) EURDEC-USUARIO.
+           DISPLAY(10, 57) ".".
+           DISPLAY(10, 61) "EUR".
+           DISPLAY(11, 19) "El saldo resultante es de:".
 
            DISPLAY SALDO-DISPLAY-FINAL.
 
 
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY(24, 33) "Enter - Aceptar".
 
 
            GO TO EXIT-ENTER.
@@ -307,16 +310,16 @@
            CLOSE F-MOVIMIENTOS.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(9 25) "Ha ocurrido un error interno"
+           DISPLAY(9, 25) "Ha ocurrido un error interno"
                WITH FOREGROUND-COLOR IS BLACK
                     BACKGROUND-COLOR IS RED.
-           DISPLAY(11 32) "Vuelva mas tarde"
+           DISPLAY(11, 32) "Vuelva mas tarde"
                WITH FOREGROUND-COLOR IS BLACK
                     BACKGROUND-COLOR IS RED.
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY(24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
-           ACCEPT(24 80) PRESSED-KEY
+           ACCEPT(24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                EXIT PROGRAM
            ELSE
