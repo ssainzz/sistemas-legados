@@ -243,21 +243,21 @@
            INITIALIZE ESPECTACULO-REG.
 
            DISPLAY BLANK-SCREEN.
-           DISPLAY(2 26) "Cajero Automatico UnizarBank"
+           DISPLAY (2, 26) "Cajero Automatico UnizarBank"
                WITH FOREGROUND-COLOR IS 1.
 
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
-           DISPLAY(4 32) DIA.
-           DISPLAY(4 34) "-".
-           DISPLAY(4 35) MES.
-           DISPLAY(4 37) "-".
-           DISPLAY(4 38) ANO.
-           DISPLAY(4 38) HORAS.
-           DISPLAY(4 46) ":".
-           DISPLAY(4 47)MINUTOS.
+           DISPLAY (4, 32) DIA.
+           DISPLAY (4, 34) "-".
+           DISPLAY (4, 35) MES.
+           DISPLAY (4, 37) "-".
+           DISPLAY (4, 38) ANO.
+           DISPLAY (4, 38) HORAS.
+           DISPLAY (4, 46) ":".
+           DISPLAY (4, 47)MINUTOS.
 
-           DISPLAY(6 22) "Compra de entradas de espectaculos".
+           DISPLAY (6, 22) "Compra de entradas de espectaculos".
 
        CONSULTA-SALDO.
            OPEN I-O F-MOVIMIENTOS.
@@ -292,19 +292,19 @@
 
 
        PLECTURA-ESP.
-           DISPLAY(9 2) "NUM".
-           DISPLAY(9 6) "|".
-           DISPLAY(9 13) "FECHA".
-           DISPLAY(9 23) "|".
-           DISPLAY(9 34) "NOMBRE Y DESCRIPCION".
-           DISPLAY(9 64) "|".
-           DISPLAY(9 65) "LIBRES".
-           DISPLAY(9 72) "|".
-           DISPLAY(9 73)"IMPORTE".
+           DISPLAY (9, 2) "NUM".
+           DISPLAY (9, 6) "|".
+           DISPLAY (9, 13) "FECHA".
+           DISPLAY (9, 23) "|".
+           DISPLAY (9, 34) "NOMBRE Y DESCRIPCION".
+           DISPLAY (9, 64) "|".
+           DISPLAY (9, 65) "LIBRES".
+           DISPLAY (9, 72) "|".
+           DISPLAY (9, 73)"IMPORTE".
 
-           DISPLAY(24 2) "Re. pag - Esp. anteriores".
-           DISPLAY(24 33) "ESC - Salir".
-           DISPLAY(24 54) "Av. pag - Esp. posteriores".
+           DISPLAY (24, 2) "Re. pag - Esp. anteriores".
+           DISPLAY (24, 33) "ESC - Salir".
+           DISPLAY (24, 54) "Av. pag - Esp. posteriores".
 
            MOVE 0 TO ESP-EN-PANTALLA.
            MOVE 9 TO LINEA-ESP-ACTUAL.
@@ -336,7 +336,7 @@
 
        WAIT-ORDER.
 
-           ACCEPT(24 80) ACCEPT-COMPRA-ENTRADAS ON EXCEPTION
+           ACCEPT ACCEPT-COMPRA-ENTRADAS LINE 24 COLUMN 80 ON EXCEPTION
 
               IF ESC-PRESSED THEN
                   CLOSE F-MOVIMIENTOS
@@ -387,50 +387,50 @@
 
        SALDO-SUFICIENTE.
            DISPLAY BLANK-SCREEN.
-           DISPLAY(2 26) "Cajero Automatico UnizarBank"
+           DISPLAY (2, 26) "Cajero Automatico UnizarBank"
                WITH FOREGROUND-COLOR IS 1.
 
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
-           DISPLAY(4 32) DIA.
-           DISPLAY(4 34) "-".
-           DISPLAY(4 35) MES.
-           DISPLAY(4 37) "-".
-           DISPLAY(4 38) ANO.
-           DISPLAY(4 44) HORAS.
-           DISPLAY(4 46) ":".
-           DISPLAY(4 47) MINUTOS.
+           DISPLAY (4, 32) DIA.
+           DISPLAY (4, 34) "-".
+           DISPLAY (4, 35) MES.
+           DISPLAY (4, 37) "-".
+           DISPLAY (4, 38) ANO.
+           DISPLAY (4, 44) HORAS.
+           DISPLAY (4, 46) ":".
+           DISPLAY (4, 47) MINUTOS.
 
-           DISPLAY(6 22) "Compra de entradas de espectaculos".
-           DISPLAY(6 22) "Compra de entradas de espectaculos".
-           DISPLAY(8 15) "Vas a comprar    entradas".
-           DISPLAY(8 29) USER-NUM-ENTRADAS.
-           DISPLAY(9 15) "del espectaculo".
-           DISPLAY(9 31) ESP-DESCR.
-           DISPLAY(10 15) "con fecha".
-           DISPLAY(10 25) ESP-DIA.
-           DISPLAY(10 27) "-".
-           DISPLAY(10 28) ESP-MES.
-           DISPLAY(10 30) "-".
-           DISPLAY(10 31) ESP-ANO.
-           DISPLAY(11 15) "a las".
-           DISPLAY(11 21) ESP-HOR.
-           DISPLAY(11 23) ":".
-           DISPLAY(11 24) ESP-MIN.
-           DISPLAY(12 15) "Codigo del espectaculo: ".
-           DISPLAY(12 39) ESP-NUM.
+           DISPLAY (6, 22) "Compra de entradas de espectaculos".
+           DISPLAY (6, 22) "Compra de entradas de espectaculos".
+           DISPLAY (8, 15) "Vas a comprar    entradas".
+           DISPLAY (8, 29) USER-NUM-ENTRADAS.
+           DISPLAY (9, 15) "del espectaculo".
+           DISPLAY (9, 31) ESP-DESCR.
+           DISPLAY (10, 15) "con fecha".
+           DISPLAY (10, 25) ESP-DIA.
+           DISPLAY (10, 27) "-".
+           DISPLAY (10, 28) ESP-MES.
+           DISPLAY (10, 30) "-".
+           DISPLAY (10, 31) ESP-ANO.
+           DISPLAY (11, 15) "a las".
+           DISPLAY (11, 21) ESP-HOR.
+           DISPLAY (11, 23) ":".
+           DISPLAY (11, 24) ESP-MIN.
+           DISPLAY (12, 15) "Codigo del espectaculo: ".
+           DISPLAY (12, 39) ESP-NUM.
 
-           DISPLAY(14 15) "Importe total: ".
-           DISPLAY(14 30) IMPORTE-ENTRADAS-ENT.
-           DISPLAY(14 36) ".".
-           DISPLAY(14 37) IMPORTE-ENTRADAS-DEC.
-           DISPLAY(14 40) "EUR".
+           DISPLAY (14, 15) "Importe total: ".
+           DISPLAY (14, 30) IMPORTE-ENTRADAS-ENT.
+           DISPLAY (14, 36) ".".
+           DISPLAY (14, 37) IMPORTE-ENTRADAS-DEC.
+           DISPLAY (14, 40) "EUR".
 
-           DISPLAY(24 2) "Enter - Confirmar".
-           DISPLAY(24 66) "ESC - Cancelar".
+           DISPLAY (24, 2) "Enter - Confirmar".
+           DISPLAY (24, 66) "ESC - Cancelar".
 
        SALDO-SUF-ENTER.
-           ACCEPT(24 80) PRESSED-KEY
+           ACCEPT (24, 80) PRESSED-KEY
            IF ENTER-PRESSED THEN
                GO TO GUARDAR-VENTA
            ELSE
@@ -479,17 +479,17 @@
 
        PANTALLA-RECOGIDA.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(6 22) "Compra de entradas de espectaculos".
-           DISPLAY(9 25) "Por favor, retire las entradas".
-           DISPLAY(12 21) "El saldo resultante es de".
+           DISPLAY (6, 22) "Compra de entradas de espectaculos".
+           DISPLAY (9, 25) "Por favor, retire las entradas".
+           DISPLAY (12, 21) "El saldo resultante es de".
            DISPLAY SALDOPOSTERIOR.
-           DISPLAY(12 57) ".".
-           DISPLAY(12 58) SALDO-POST-DEC.
+           DISPLAY (12, 57) ".".
+           DISPLAY (12, 58) SALDO-POST-DEC.
 
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY (24, 33) "Enter - Aceptar".
 
        RECOGER-ENTER.
-           ACCEPT(24 80) PRESSED-KEY
+           ACCEPT (24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                EXIT PROGRAM
            ELSE
@@ -497,28 +497,28 @@
 
        NO-ENTR-DISP.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(06 22) "Compra de entradas de espectaculos".
-           DISPLAY(08 27) "Lamentamos comunicarle que"
+           DISPLAY (06, 22) "Compra de entradas de espectaculos".
+           DISPLAY (08, 27) "Lamentamos comunicarle que"
                WITH BACKGROUND-COLOR RED.
-           DISPLAY(9 9) "El espectaculo seleccionado no"
+           DISPLAY (9, 9) "El espectaculo seleccionado no"
                WITH BACKGROUND-COLOR RED.
-           DISPLAY(9 40) "dispone de suficientes entradas"
+           DISPLAY (9, 40) "dispone de suficientes entradas"
                WITH BACKGROUND-COLOR RED.
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY (24, 33) "Enter - Aceptar".
 
            GO TO VENTA-ERR-ENTER.
 
        SALDO-INSUFICIENTE.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(6 22) "Compra de entradas de espectaculos".
-           DISPLAY(8 27) "Lamentamos comunicarle que"
+           DISPLAY (6, 22) "Compra de entradas de espectaculos".
+           DISPLAY (8, 27) "Lamentamos comunicarle que"
                WITH BACKGROUND-COLOR RED.
-           DISPLAY(9 28) "su saldo es insuficiente"
+           DISPLAY (9, 28) "su saldo es insuficiente"
                WITH BACKGROUND-COLOR RED.
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY (24, 33) "Enter - Aceptar".
 
        VENTA-ERR-ENTER.
-           ACCEPT(24 80) PRESSED-KEY
+           ACCEPT (24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                CLOSE F-MOVIMIENTOS
                CLOSE F-ESPECTACULOS
@@ -634,16 +634,16 @@
            CLOSE F-ESPECTACULOS.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(9 25) "Ha ocurrido un error interno"
+           DISPLAY (9, 25) "Ha ocurrido un error interno"
                WITH FOREGROUND-COLOR IS BLACK
                     BACKGROUND-COLOR IS RED.
-           DISPLAY(11 32) "Vuelva mas tarde"
+           DISPLAY (11, 32) "Vuelva mas tarde"
                WITH FOREGROUND-COLOR IS BLACK
                     BACKGROUND-COLOR IS RED.
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY (24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
-           ACCEPT(24 80) PRESSED-KEY
+           ACCEPT (24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                EXIT PROGRAM
            ELSE
