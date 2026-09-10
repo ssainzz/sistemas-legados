@@ -120,20 +120,20 @@
            SET ENVIRONMENT 'COB_SCREEN_EXCEPTIONS' TO 'Y'.
 
            DISPLAY BLANK-SCREEN.
-           DISPLAY(2 26) "Cajero Automatico UnizarBank"
+           DISPLAY(2, 26) "Cajero Automatico UnizarBank"
                WITH FOREGROUND-COLOR IS 1.
 
 
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
-           DISPLAY(4 32) DIA.
-           DISPLAY(4 34) "-".
-           DISPLAY(4 35) MES.
-           DISPLAY(4 37) "-".
-           DISPLAY(4 38) ANO.
-           DISPLAY(4 44) HORAS.
-           DISPLAY(4 46) ":".
-           DISPLAY(4 47) MINUTOS.
+           DISPLAY(4, 32) DIA.
+           DISPLAY(4, 34) "-".
+           DISPLAY(4, 35) MES.
+           DISPLAY(4, 37) "-".
+           DISPLAY(4, 38) ANO.
+           DISPLAY(4, 44) HORAS.
+           DISPLAY(4, 46) ":".
+           DISPLAY(4, 47) MINUTOS.
 
 
 
@@ -184,7 +184,7 @@
                MOVE 0 TO SALDO-USUARIO-ENT
                MOVE 0 TO SALDO-USUARIO-DEC
                MOVE 0 TO CENT-SALDO-USER
-               GO TO PANTALLA-RETIRADA
+               GO TO PANTALLA-RETIRADA-INICIO
            END-IF.
 
            MOVE LAST-USER-MOV-NUM TO MOV-NUM.
@@ -206,35 +206,37 @@
 
 
        PANTALLA-RETIRADA SECTION.
+
+       PANTALLA-RETIRADA-INICIO.
            INITIALIZE EURENT-USUARIO.
            INITIALIZE EURDEC-USUARIO.
 
-           DISPLAY(24 1) "Enter - Aceptar".
-           DISPLAY(24 66) "ESC - Cancelar".
+           DISPLAY(24, 1) "Enter - Aceptar".
+           DISPLAY(24, 66) "ESC - Cancelar".
 
-           DISPLAY(8 30) "Retirar efectivo".
-           DISPLAY(10 19) "Saldo Actual: ".
+           DISPLAY(8, 30) "Retirar efectivo".
+           DISPLAY(10, 19) "Saldo Actual: ".
 
            DISPLAY SALDO-DISPLAY.
 
-           DISPLAY(11 19) "Indique la cantidad:         ".
-           DISPLAY(11 47) ".".
-           DISPLAY(11 51) "EUR".
+           DISPLAY(11, 19) "Indique la cantidad:         ".
+           DISPLAY(11, 47) ".".
+           DISPLAY(11, 51) "EUR".
 
            ACCEPT ENTRADA-USUARIO ON EXCEPTION
            IF ESC-PRESSED THEN
                EXIT PROGRAM
            ELSE
-               GO TO PANTALLA-RETIRADA
+               GO TO PANTALLA-RETIRADA-INICIO
            END-IF.
 
            COMPUTE CENT-IMPOR-USER = (EURENT-USUARIO * 100)
                                      + EURDEC-USUARIO.
 
            IF CENT-IMPOR-USER > CENT-SALDO-USER THEN
-               DISPLAY(15 19) "Indique una cantidad menor!!"
+               DISPLAY(15, 19) "Indique una cantidad menor!!"
                    WITH BACKGROUND-COLOR RED
-               GO TO PANTALLA-RETIRADA
+               GO TO PANTALLA-RETIRADA-INICIO
            END-IF.
 
 
@@ -279,13 +281,13 @@
 
        FINALIZACION SECTION.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(8 30) "Retirar efectivo".
-           DISPLAY(10 19) "Por favor, retire los billetes".
-           DISPLAY(11 17) "El saldo resultante es de:".
+           DISPLAY(8, 30) "Retirar efectivo".
+           DISPLAY(10, 19) "Por favor, retire los billetes".
+           DISPLAY(11, 17) "El saldo resultante es de:".
 
            DISPLAY SALDO-DISPLAY-FINAL.
 
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY(24, 33) "Enter - Aceptar".
 
            GO TO EXIT-ENTER.
 
@@ -297,16 +299,16 @@
            CLOSE F-MOVIMIENTOS.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY(9 25) "Ha ocurrido un error interno"
+           DISPLAY(9, 25) "Ha ocurrido un error interno"
                WITH FOREGROUND-COLOR IS BLACK
                     BACKGROUND-COLOR IS RED.
-           DISPLAY(11 32) "Vuelva mas tarde"
+           DISPLAY(11, 32) "Vuelva mas tarde"
                WITH FOREGROUND-COLOR IS BLACK
                     BACKGROUND-COLOR IS RED.
-           DISPLAY(24 33) "Enter - Aceptar".
+           DISPLAY(24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
-           ACCEPT(24 80) PRESSED-KEY
+           ACCEPT(24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                EXIT PROGRAM
            ELSE
