@@ -253,16 +253,21 @@
            DISPLAY (4, 35) MES.
            DISPLAY (4, 37) "-".
            DISPLAY (4, 38) ANO.
-           DISPLAY (4, 38) HORAS.
+           DISPLAY (4, 44) HORAS.
            DISPLAY (4, 46) ":".
-           DISPLAY (4, 47)MINUTOS.
+           DISPLAY (4, 47) MINUTOS.
 
            DISPLAY (6, 22) "Compra de entradas de espectaculos".
 
        CONSULTA-SALDO.
            OPEN I-O F-MOVIMIENTOS.
-           IF FSM <> 30
-               GO TO PSYS-ERR.
+           IF FSM = "35"
+               OPEN OUTPUT F-MOVIMIENTOS
+               CLOSE F-MOVIMIENTOS
+               OPEN I-O F-MOVIMIENTOS
+           END-IF.
+           IF FSM NOT = 00
+               GO TO PSYS-ERR.                                                                                            GO TO PSYS-ERR.
 
            MOVE 0 TO LAST-USER-MOV-NUM.
            MOVE 0 TO LAST-MOV-NUM.
@@ -310,7 +315,7 @@
            MOVE 9 TO LINEA-ESP-ACTUAL.
 
            OPEN I-O F-ESPECTACULOS.
-           IF FSE <> 30
+           IF FSE NOT = 00
                GO TO PSYS-ERR.
 
 
@@ -336,7 +341,7 @@
 
        WAIT-ORDER.
 
-           ACCEPT ACCEPT-COMPRA-ENTRADAS LINE 24 COLUMN 80 ON EXCEPTION
+           ACCEPT ACCEPT-COMPRA-ENTRADAS ON EXCEPTION
 
               IF ESC-PRESSED THEN
                   CLOSE F-MOVIMIENTOS
