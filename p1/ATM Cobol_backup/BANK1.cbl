@@ -203,6 +203,17 @@
 
            IF CHOICE = 7
                CALL "BANK8" USING TNUM
+
+               *> Comprobar si BANK8 ha bloqueado la tarjeta
+               OPEN I-O INTENTOS
+               MOVE TNUM TO INUM
+               READ INTENTOS
+               IF IINTENTOS = 0
+                   CLOSE INTENTOS
+                   GO TO IMPRIMIR-CABECERA
+               END-IF
+               CLOSE INTENTOS
+
                GO TO PMENU.
 
            GO TO PMENU.

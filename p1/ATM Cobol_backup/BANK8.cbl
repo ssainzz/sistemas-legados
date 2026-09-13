@@ -79,6 +79,18 @@
        01 BLANK-SCREEN.
            05 FILLER LINE 1 BLANK SCREEN BACKGROUND-COLOR BLACK.
 
+       01 PANTALLA-CLAVE-ACTUAL.
+           05 BLANK ZERO SECURE LINE 10 COL 42 PIC 9(4) USING 
+           CLAVE-ACTUAL.
+
+       01 PANTALLA-CLAVE-N1.
+           05 BLANK ZERO SECURE LINE 11 COL 42 PIC 9(4) USING 
+           CLAVE-NUEVA-1.
+
+       01 PANTALLA-CLAVE-N2.
+           05 BLANK ZERO SECURE LINE 12 COL 42 PIC 9(4) USING 
+           CLAVE-NUEVA-2.
+
        PROCEDURE DIVISION USING L-TNUM.
        INICIO.
            OPEN I-O TARJETAS.
@@ -120,20 +132,20 @@
            INITIALIZE CLAVE-NUEVA-1.
            INITIALIZE CLAVE-NUEVA-2.
 
-           ACCEPT (10, 42) CLAVE-ACTUAL WITH SECURE.
+           ACCEPT PANTALLA-CLAVE-ACTUAL.
            IF ESC-PRESSED
                MOVE 'Y' TO SW-FIN
            END-IF.
 
            IF SW-FIN = 'N'
-               ACCEPT (11, 42) CLAVE-NUEVA-1 WITH SECURE
+               ACCEPT PANTALLA-CLAVE-N1
                IF ESC-PRESSED
                    MOVE 'Y' TO SW-FIN
                END-IF
            END-IF.
 
            IF SW-FIN = 'N'
-               ACCEPT (12, 42) CLAVE-NUEVA-2 WITH SECURE
+               ACCEPT PANTALLA-CLAVE-N2
                IF ESC-PRESSED
                    MOVE 'Y' TO SW-FIN
                END-IF
@@ -146,7 +158,10 @@
                    REWRITE INTENTOSREG
                    IF IINTENTOS = 0
                        PERFORM MOSTRAR-BLOQUEO
-                       MOVE 'Y' TO SW-FIN
+
+                       CLOSE TARJETAS
+                       CLOSE INTENTOS
+                       EXIT PROGRAM
                    ELSE
                        PERFORM MOSTRAR-ERROR-CLAVE
                    END-IF
@@ -167,6 +182,7 @@
            DISPLAY (8, 15) "Cambio de clave personal".
            DISPLAY (12, 15) "La clave se ha cambiado correctamente".
            DISPLAY (24, 33) "Enter-Aceptar".
+           PERFORM REINICIAR-INTENTOS.
            PERFORM ESPERAR-ENTER.
 
        MOSTRAR-ERROR-CLAVE.
@@ -229,4 +245,8 @@
            DISPLAY (4, 44) HORAS.
            DISPLAY (4, 46) ":".
            DISPLAY (4, 47) MINUTOS.
+
+       REINICIAR-INTENTOS.
+           MOVE 3 TO IINTENTOS.
+           REWRITE INTENTOSREG.
            
