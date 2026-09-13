@@ -178,7 +178,15 @@
            PERFORM CARGAR-5
            PERFORM CARGAR-6
            PERFORM CARGAR-7
-           PERFORM CARGAR-8.
+           PERFORM CARGAR-8
+           PERFORM CARGAR-9
+           PERFORM CARGAR-10
+           PERFORM CARGAR-11
+           PERFORM CARGAR-12
+           PERFORM CARGAR-13
+           PERFORM CARGAR-14
+           PERFORM CARGAR-15
+           PERFORM CARGAR-16.
 
 
        CARGAR-1.
@@ -265,6 +273,94 @@
            MOVE 2100 TO HORA
            MOVE "Gran Gala del Futuro" TO NOMBRE
            MOVE 0002500004500 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-9.
+
+           MOVE 0013 TO ID-ESPECTACULO
+           MOVE 20410515 TO FECHA
+           MOVE 2100 TO HORA
+           MOVE "Cirque du Soleil: Futuro" TO NOMBRE
+           MOVE 0001600003000 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-10.
+
+           MOVE 0014 TO ID-ESPECTACULO
+           MOVE 20420310 TO FECHA
+           MOVE 2000 TO HORA
+           MOVE "Opera: Aida en el Espacio" TO NOMBRE
+           MOVE 0002200001500 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-11.
+
+           MOVE 0015 TO ID-ESPECTACULO
+           MOVE 20421125 TO FECHA
+           MOVE 2200 TO HORA
+           MOVE "Rock in Rio 2042" TO NOMBRE
+           MOVE 0002800006000 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-12.
+
+           MOVE 0016 TO ID-ESPECTACULO
+           MOVE 20430814 TO FECHA
+           MOVE 1900 TO HORA
+           MOVE "El Rey Leon: Edicion 50 Aniversario" TO NOMBRE
+           MOVE 0001900002000 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-13.
+
+           MOVE 0017 TO ID-ESPECTACULO
+           MOVE 20440214 TO FECHA
+           MOVE 2030 TO HORA
+           MOVE "Concierto Especial San Valentin" TO NOMBRE
+           MOVE 0001000001200 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-14.
+
+           MOVE 0018 TO ID-ESPECTACULO
+           MOVE 20450621 TO FECHA
+           MOVE 2130 TO HORA
+           MOVE "Festival Solsticio de Verano" TO NOMBRE
+           MOVE 0001400002500 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-15.
+
+           MOVE 0019 TO ID-ESPECTACULO
+           MOVE 20460909 TO FECHA
+           MOVE 2000 TO HORA
+           MOVE "Sinfonica Virtual de Viena" TO NOMBRE
+           MOVE 0001700001800 TO DATOS
+
+           PERFORM ESCRIBIR-ESPECTACULO.
+
+
+       CARGAR-16.
+
+           MOVE 0020 TO ID-ESPECTACULO
+           MOVE 20480101 TO FECHA
+           MOVE 1800 TO HORA
+           MOVE "Concierto Gala de Ano Nuevo" TO NOMBRE
+           MOVE 0002500003000 TO DATOS
 
            PERFORM ESCRIBIR-ESPECTACULO.
 
@@ -503,3 +599,4 @@
                  F-TARJETAS
                  F-MOVIMIENTOS
                  F-INTENTOS.
+                 
