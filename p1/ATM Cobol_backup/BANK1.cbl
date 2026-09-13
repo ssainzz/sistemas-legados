@@ -174,9 +174,9 @@
            DISPLAY (24, 34) "ESC - Salir".
 
        PMENUA1.
-           ACCEPT (24, 80) CHOICE
+           ACCEPT (24, 80) CHOICE.
                IF ESC-PRESSED
-                   GO TO IMPRIMIR-CABECERA
+                   GO TO IMPRIMIR-CABECERA.
 
            IF CHOICE = 1
                CALL "BANK2" USING TNUM

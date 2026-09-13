@@ -108,7 +108,7 @@
 
        PCONSULTA-SALDO.
            OPEN INPUT F-MOVIMIENTOS.
-           IF FSM <> 30
+           IF FSM = 30
                GO TO PSYS-ERR.
 
            MOVE 0 TO LAST-MOV-NUM.
@@ -134,7 +134,7 @@
 
            MOVE LAST-MOV-NUM TO MOV-NUM.
            OPEN INPUT F-MOVIMIENTOS.
-           IF FSM <> 30
+           IF FSM = 30
                GO TO PSYS-ERR.
 
            READ F-MOVIMIENTOS INVALID KEY GO PSYS-ERR.
@@ -167,6 +167,7 @@
            DISPLAY(24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
+       
            ACCEPT(24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                EXIT PROGRAM
