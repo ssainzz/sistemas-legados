@@ -79,7 +79,7 @@
        77 CENT-IMPOR-USER          PIC    9(9).
 
        77 CON                      PIC   X(35) VALUE "Retirada".
-       77 PRESSED-KEY              PIC    9(4).
+       77 PRESSED-KEY              PIC    X.
 
        LINKAGE SECTION.
        77 TNUM                     PIC  9(16).
