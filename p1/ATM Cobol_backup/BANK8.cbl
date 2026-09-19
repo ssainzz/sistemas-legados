@@ -65,7 +65,7 @@
            88 ENTER-PRESSED        VALUE 0.
            88 ESC-PRESSED          VALUE 2005.
 
-       77 CHOICE                   PIC 9(1).
+       77 CHOICE                   PIC X.
        77 CLAVE-ACTUAL             PIC 9(4).
        77 CLAVE-NUEVA-1            PIC 9(4).
        77 CLAVE-NUEVA-2            PIC 9(4).
