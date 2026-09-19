@@ -68,7 +68,7 @@
            88 DOWN-ARROW-PRESSED  VALUE  2004.
 
        77 LAST-MOV-NUM             PIC  9(35).
-       77 PRESSED-KEY              PIC   9(4).
+       77 PRESSED-KEY              PIC   X.
 
        LINKAGE SECTION.
        77 TNUM                     PIC  9(16).
