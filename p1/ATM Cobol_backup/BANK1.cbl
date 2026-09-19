@@ -73,7 +73,6 @@
 
        77 PRESSED-KEY              PIC  9(4).
        77 PIN-INTRODUCIDO          PIC  9(4).
-       77 CHOICE                   PIC  9(1).
        77 TECLA-ESPERA             PIC X VALUE SPACE.
 
 
@@ -175,39 +174,39 @@
            DISPLAY (24, 34) "ESC - Salir".
 
        PMENUA1.
-           ACCEPT (24, 80) CHOICE.
+           ACCEPT (24, 80) TECLA-ESPERA.
                IF ESC-PRESSED
                    GO TO IMPRIMIR-CABECERA.
 
-           IF CHOICE = 1
+           IF TECLA-ESPERA = "1"
                CALL "BANK2" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 2
+           IF TECLA-ESPERA = "2"
                CALL "BANK3" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 3
+           IF TECLA-ESPERA = "3"
                CALL "BANK4" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 4
+           IF TECLA-ESPERA = "4"
                CALL "BANK5" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 5
+           IF TECLA-ESPERA = "5"
                CALL "BANK6" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 6
+           IF TECLA-ESPERA = "6"
                CALL "BANK9" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 7
+           IF TECLA-ESPERA = "7"
                CALL "BANK7" USING TNUM
                GO TO PMENU.
 
-           IF CHOICE = 8
+           IF TECLA-ESPERA = "8"
                CALL "BANK8" USING TNUM
 
                *> Comprobar si BANK8 ha bloqueado la tarjeta
@@ -260,7 +259,7 @@
            DISPLAY (24, 33) "Enter - Aceptar".
 
        PINT-ERR-ENTER.
-           ACCEPT (24, 80) CHOICE
+           ACCEPT (24, 80) TECLA-ESPERA
            IF ENTER-PRESSED
                GO TO IMPRIMIR-CABECERA
            ELSE
@@ -293,7 +292,7 @@
            DISPLAY (24, 65) "ESC - Cancelar".
 
        PPIN-ERR-ENTER.
-           ACCEPT (24, 80) CHOICE
+           ACCEPT (24, 80) TECLA-ESPERA
            IF ENTER-PRESSED
                GO TO P2
            ELSE
