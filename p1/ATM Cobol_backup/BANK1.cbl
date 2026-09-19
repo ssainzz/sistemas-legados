@@ -74,6 +74,7 @@
        77 PRESSED-KEY              PIC  9(4).
        77 PIN-INTRODUCIDO          PIC  9(4).
        77 CHOICE                   PIC  9(1).
+       77 TECLA-ESPERA             PIC X VALUE SPACE.
 
 
        SCREEN SECTION.
@@ -119,7 +120,7 @@
            DISPLAY (24, 33) "Enter - Aceptar".
 
        P1-ENTER.
-           ACCEPT (24, 80) CHOICE
+           ACCEPT (24, 80) TECLA-ESPERA
            IF ENTER-PRESSED
                GO TO P2
            ELSE
