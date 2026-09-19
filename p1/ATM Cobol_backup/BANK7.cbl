@@ -89,7 +89,7 @@
            88 UP-ARROW-PRESSED      VALUE 2003.
            88 DOWN-ARROW-PRESSED    VALUE 2004.
            88 ESC-PRESSED           VALUE 2005.
-       77 PRESSED-KEY               PIC   9(4).
+       77 PRESSED-KEY               PIC   X.
 
        77 USER-NUM-ENTRADAS         PIC   9(2).
        77 USER-NUM-ESPECT           PIC   9(4).
