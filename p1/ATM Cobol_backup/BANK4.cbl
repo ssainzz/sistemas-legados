@@ -140,7 +140,7 @@
 
        CONSULTA-ULTIMO-MOVIMIENTO SECTION.
            OPEN I-O F-MOVIMIENTOS.
-           IF FSM = 30
+           IF FSM NOT = "00"
               GO TO PSYS-ERR.
 
            MOVE 0 TO LAST-MOV-NUM.
@@ -161,7 +161,7 @@
 
        CONSULTA-SALDO-USUARIO SECTION.
            OPEN INPUT F-MOVIMIENTOS.
-           IF FSM = 30
+           IF FSM NOT = "00"
                GO TO PSYS-ERR.
 
            MOVE 0 TO LAST-USER-MOV-NUM.
@@ -190,10 +190,11 @@
            MOVE LAST-USER-MOV-NUM TO MOV-NUM.
 
            OPEN INPUT F-MOVIMIENTOS.
-           IF FSM = 30
+           IF FSM NOT = "00"
                GO TO PSYS-ERR.
 
-           READ F-MOVIMIENTOS INVALID KEY GO TO PSYS-ERR.
+           READ F-MOVIMIENTOS KEY IS MOV-NUM
+               INVALID KEY GO TO PSYS-ERR.
 
            MOVE MOV-SALDOPOS-ENT TO SALDO-USUARIO-ENT.
            MOVE MOV-SALDOPOS-DEC TO SALDO-USUARIO-DEC.
@@ -251,7 +252,7 @@
        INSERTAR-MOVIMIENTO SECTION.
 
            OPEN I-O F-MOVIMIENTOS.
-           IF FSM = 30
+           IF FSM NOT = "00"
               GO TO PSYS-ERR.
 
            SUBTRACT CENT-IMPOR-USER FROM CENT-SALDO-USER.
