@@ -71,16 +71,19 @@
        77 LAST-USER-MOV-NUM        PIC   9(35).
        77 LAST-MOV-NUM             PIC   9(35).
 
+       77 NUM-BILLETES-10          PIC    9(3).
+       77 NUM-BILLETES-20          PIC    9(3).
+       77 NUM-BILLETES-50          PIC    9(3).
+
        77 EURENT-USUARIO           PIC    9(7).
        77 EURDEC-USUARIO           PIC    9(2).
        77 SALDO-USUARIO-ENT        PIC   S9(9).
        77 SALDO-USUARIO-DEC        PIC    9(2).
        77 CENT-SALDO-USER          PIC  S9(11).
        77 CENT-IMPOR-USER          PIC    9(9).
-       77 CENT-ACUMULADOR          PIC   9(11).
 
        77 CON                      PIC   X(35) VALUE "Ingreso".
-       77 PRESSED-KEY              PIC    9(4).
+       77 CHOICE                   PIC    X.
 
        LINKAGE SECTION.
        77 TNUM                     PIC  9(16).
@@ -92,11 +95,13 @@
            05 FILLER LINE 1 BLANK SCREEN BACKGROUND-COLOR BLACK.
 
 
-       01 ENTRADA-USUARIO.
+       01 ENTRADA-BILLETES.
            05 FILLER BLANK ZERO AUTO UNDERLINE
-               LINE 13 COL 41 PIC 9(7) USING EURENT-USUARIO.
+               LINE 14 COL 40 PIC 9(3) USING NUM-BILLETES-10.
+           05 FILLER BLANK ZERO AUTO UNDERLINE
+               LINE 15 COL 40 PIC 9(3) USING NUM-BILLETES-20.
            05 FILLER BLANK ZERO UNDERLINE
-               LINE 13 COL 49 PIC 9(2) USING EURDEC-USUARIO.
+               LINE 16 COL 40 PIC 9(3) USING NUM-BILLETES-50.
 
        01 SALDO-DISPLAY.
            05 FILLER SIGN IS LEADING SEPARATE
@@ -140,8 +145,6 @@
 
 
        CONSULTA-ULTIMO-MOVIMIENTO SECTION.
-
-           INITIALIZE CENT-ACUMULADOR.
 
            OPEN I-O F-MOVIMIENTOS.
            IF FSM NOT = "00"
@@ -213,32 +216,44 @@
        PANTALLA-INGRESO SECTION.
 
        PANTALLA-INGRESO-INICIO.
+           INITIALIZE NUM-BILLETES-10.
+           INITIALIZE NUM-BILLETES-20.
+           INITIALIZE NUM-BILLETES-50.
            INITIALIZE EURENT-USUARIO.
            INITIALIZE EURDEC-USUARIO.
 
-           DISPLAY(24, 33) "ESC - Finalizar ingreso efectivo".
+           DISPLAY(24, 33) "ESC - Cancelar".
            DISPLAY(8, 30) "Ingresar efectivo".
            DISPLAY(10, 19) "Saldo Actual: ".
-
            DISPLAY SALDO-DISPLAY.
-
-           DISPLAY(11, 19) "Por favor,introduzca billetes".
-           DISPLAY(13, 19) "Cantidad introducida:         ".
-           DISPLAY(13, 48) ".".
-           DISPLAY(13, 52) "EUR".
+           DISPLAY(12, 19) "Billetes de 10 EUR:".
+           DISPLAY(13, 19) "Billetes de 20 EUR:".
+           DISPLAY(14, 19) "Billetes de 50 EUR:".
 
        CONF2.
-           ACCEPT ENTRADA-USUARIO ON EXCEPTION
+           ACCEPT ENTRADA-BILLETES ON EXCEPTION
                IF ESC-PRESSED THEN
-                   GO TO PANT-INICIO
+                   EXIT PROGRAM
                ELSE
                    GO TO CONF2
                END-IF.
 
-           COMPUTE CENT-IMPOR-USER = (EURENT-USUARIO * 100)
-                                     + EURDEC-USUARIO.
-           ADD CENT-IMPOR-USER TO CENT-ACUMULADOR.
+           IF NUM-BILLETES-10 = 0 AND
+              NUM-BILLETES-20 = 0 AND
+              NUM-BILLETES-50 = 0
+               DISPLAY(20, 19) "Debe introducir al menos un billete"
+                   WITH BACKGROUND-COLOR RED
+               GO TO PANTALLA-INGRESO-INICIO
+           END-IF.
 
+           COMPUTE CENT-IMPOR-USER = (NUM-BILLETES-10 * 1000)
+                                  + (NUM-BILLETES-20 * 2000)
+                                  + (NUM-BILLETES-50 * 5000).
+
+           COMPUTE EURENT-USUARIO = (CENT-IMPOR-USER / 100).
+           MOVE FUNCTION MOD(CENT-IMPOR-USER, 100) TO EURDEC-USUARIO.
+
+           GO TO INSERTAR-MOVIMIENTO.
 
 
 
@@ -285,25 +300,18 @@
        PANT SECTION.
 
        PANT-INICIO.
-           COMPUTE EURENT-USUARIO = (CENT-ACUMULADOR / 100).
-           MOVE FUNCTION MOD(CENT-ACUMULADOR, 100)
-               TO EURDEC-USUARIO.
-
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY(8, 30) "Ingresar efectivo".
            DISPLAY(10, 19) "Se han recibido correctamente:".
            DISPLAY(10, 50) EURENT-USUARIO.
-           DISPLAY(10, 58) EURDEC-USUARIO.
            DISPLAY(10, 57) ".".
+           DISPLAY(10, 58) EURDEC-USUARIO.
            DISPLAY(10, 61) "EUR".
            DISPLAY(11, 19) "El saldo resultante es de:".
 
            DISPLAY SALDO-DISPLAY-FINAL.
 
-
            DISPLAY(24, 33) "Enter - Aceptar".
-
-
            GO TO EXIT-ENTER.
 
        PSYS-ERR.
@@ -320,7 +328,7 @@
            DISPLAY(24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
-           ACCEPT(24, 80) PRESSED-KEY
+           ACCEPT(24, 80) CHOICE
            IF ENTER-PRESSED
                EXIT PROGRAM
            ELSE
