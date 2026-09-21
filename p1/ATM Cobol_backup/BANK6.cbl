@@ -20,7 +20,6 @@
            RECORD KEY IS MOV-NUM
            FILE STATUS IS FSM.
 
-
        DATA DIVISION.
        FILE SECTION.
        FD TARJETAS
@@ -46,7 +45,6 @@
            02 MOV-CONCEPTO         PIC  X(35).
            02 MOV-SALDOPOS-ENT     PIC  S9(9).
            02 MOV-SALDOPOS-DEC     PIC   9(2).
-
 
        WORKING-STORAGE SECTION.
        77 FST                      PIC   X(2).
@@ -87,7 +85,7 @@
        77 LAST-USER-ORD-MOV-NUM    PIC  9(35).
        77 LAST-USER-DST-MOV-NUM    PIC  9(35).
 
-       77 EURENT-USUARIO           PIC  S9(7).
+       77 EURENT-USUARIO           PIC   9(7).
        77 EURDEC-USUARIO           PIC   9(2).
        77 CUENTA-DESTINO           PIC  9(16).
        77 NOMBRE-DESTINO           PIC  X(35).
@@ -111,10 +109,9 @@
                LINE 12 COL 54 PIC 9(16) USING CUENTA-DESTINO.
            05 FILLER AUTO UNDERLINE
                LINE 14 COL 54 PIC X(15) USING NOMBRE-DESTINO.
-           05 EUR-ENT-TRF BLANK ZERO AUTO UNDERLINE
-               SIGN IS LEADING SEPARATE
-               LINE 16 COL 54 PIC -9(7) USING EURENT-USUARIO.
-           05 FILLER BLANK ZERO UNDERLINE
+           05 EUR-ENT-TRF BLANK WHEN ZERO AUTO UNDERLINE
+               LINE 16 COL 54 PIC 9(7) USING EURENT-USUARIO.
+           05 FILLER BLANK WHEN ZERO UNDERLINE
                LINE 16 COL 63 PIC 9(2) USING EURDEC-USUARIO.
 
        01 SALDO-DISPLAY.
@@ -123,7 +120,6 @@
            05 FILLER LINE 10 COL 41 VALUE ",".
            05 FILLER LINE 10 COL 42 PIC 99 FROM MOV-SALDOPOS-DEC.
            05 FILLER LINE 10 COL 45 VALUE "EUR".
-
 
        PROCEDURE DIVISION USING TNUM.
        INICIO.
@@ -208,14 +204,40 @@
                GO TO INDICAR-CTA-DST
            END-IF.
 
+           IF CUENTA-DESTINO = 0 THEN
+               DISPLAY (20, 19) 
+                   "Error: Cuenta invalida o vacia!!                "
+                   WITH BACKGROUND-COLOR RED
+               GO TO INDICAR-CTA-DST
+           END-IF.
+
+           IF CUENTA-DESTINO = TNUM THEN
+               DISPLAY (20, 19) 
+                   "Error: No puedes transferirte a ti mismo        "
+                   WITH BACKGROUND-COLOR RED
+               GO TO INDICAR-CTA-DST
+           END-IF.
+
            COMPUTE CENT-IMPOR-USER = (EURENT-USUARIO * 100)
                                      + EURDEC-USUARIO.
 
-           IF CENT-IMPOR-USER > CENT-SALDO-ORD-USER THEN
-                   DISPLAY (20, 19) "Indique una cantidad menor!!"
-                    WITH BACKGROUND-COLOR RED
-                   GO TO INDICAR-CTA-DST
+           IF CENT-IMPOR-USER <= 0 THEN
+               DISPLAY (20, 19) 
+                   "Error: Cantidad invalida (No use letras ni ',')"
+                   WITH BACKGROUND-COLOR RED
+               GO TO INDICAR-CTA-DST
            END-IF.
+
+           IF CENT-IMPOR-USER > CENT-SALDO-ORD-USER THEN
+               DISPLAY (20, 19) 
+                   "Error: Indique una cantidad menor!!             "
+                   WITH BACKGROUND-COLOR RED
+               GO TO INDICAR-CTA-DST
+           END-IF.
+
+           DISPLAY (20, 19) 
+               "                                                "
+               WITH BACKGROUND-COLOR BLACK.
 
            GO TO REALIZAR-TRF-VERIFICACION.
 
@@ -256,15 +278,16 @@
            DISPLAY (24, 66) "ESC - Cancelar".
 
        ENTER-VERIFICACION.
-           ACCEPT (24, 80) PRESSED-KEY
+           ACCEPT PRESSED-KEY LINE 24 COLUMN 80 ON EXCEPTION
+           IF ESC-PRESSED THEN
+               EXIT PROGRAM
+           ELSE
+               GO TO ENTER-VERIFICACION
+           END-IF.
            IF ENTER-PRESSED
                GO TO VERIFICACION-CTA-CORRECTA
            ELSE
-               IF ESC-PRESSED
-                   EXIT PROGRAM
-               ELSE
-                   GO TO ENTER-VERIFICACION
-               END-IF
+               GO TO ENTER-VERIFICACION
            END-IF.
 
        VERIFICACION-CTA-CORRECTA.
@@ -287,7 +310,6 @@
                    MOVE MOV-NUM TO LAST-USER-DST-MOV-NUM
                END-IF
            END-IF.
-
            GO TO LECTURA-SALDO-DST.
 
        GUARDAR-TRF.
