@@ -83,6 +83,8 @@
 
        77 FILTRO-IMPORTE-ACTIVO     PIC   9(1) VALUE 0.
 
+       77 WS-PUNTO                  PIC   X VALUE ".".
+
        77 FECHA-MIN                 PIC   9(8).
        77 FECHA-MOV                 PIC   9(8).
        77 FECHA-MAX                 PIC   9(8).
@@ -111,7 +113,8 @@
            05 FILLER LINE 1 BLANK SCREEN BACKGROUND-COLOR BLACK.
 
        01 ESPERA-TECLA-MOVIMIENTOS.
-           05 FILLER LINE 24 COL 80 PIC X USING PRESSED-KEY.
+           05 FILLER LINE 24 COL 80 PIC X USING PRESSED-KEY
+               BACKGROUND-COLOR BLACK FOREGROUND-COLOR BLACK.
 
        01 FILTRO-MOVIMIENTOS.
            05 DIA-MIN BLANK ZERO AUTO UNDERLINE
@@ -128,12 +131,14 @@
                LINE 13 COL 56 PIC 9(4) USING ANO2-USUARIO.
            05 EUR-ENT-MIN BLANK ZERO AUTO UNDERLINE
                LINE 15 COL 30 PIC 9(7) USING EURENT1-USUARIO.
+           05 PUNTO-MIN LINE 15 COL 37 PIC X FROM WS-PUNTO.
            05 EUR-DEC-MIN BLANK ZERO AUTO UNDERLINE
-               LINE 15 COL 39 PIC 9(2) USING EURDEC1-USUARIO.
+               LINE 15 COL 38 PIC 9(2) USING EURDEC1-USUARIO.
            05 EUR-ENT-MAX BLANK ZERO AUTO UNDERLINE
                LINE 15 COL 48 PIC 9(7) USING EURENT2-USUARIO.
+           05 PUNTO-MAX LINE 15 COL 55 PIC X FROM WS-PUNTO.
            05 EUR-DEC-MAX BLANK ZERO AUTO UNDERLINE
-               LINE 15 COL 57 PIC 9(2) USING EURDEC2-USUARIO.
+               LINE 15 COL 56 PIC 9(2) USING EURDEC2-USUARIO.
 
        01 FILA-MOVIMIENTO-PAR.
 
@@ -264,7 +269,7 @@
 
            DISPLAY(13, 20) "Entre las fechas   /  /     y   /  /    ".
            DISPLAY(15, 15)
-            "Cantidad entre         .   EUR y         .   EUR".
+            "Cantidad entre           EUR y             EUR".
 
            DISPLAY(24, 01) "Enter - Aceptar".
            DISPLAY(24, 65) "ESC - Cancelar".
@@ -542,4 +547,3 @@
                DISPLAY FILA-MOVIMIENTO-PAR
            ELSE
                DISPLAY FILA-MOVIMIENTO-IMPAR.
-               
