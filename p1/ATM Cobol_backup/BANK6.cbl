@@ -94,8 +94,13 @@
        77 CENT-SALDO-DST-USER      PIC  S9(9).
        77 CENT-IMPOR-USER          PIC  S9(9).
 
-       77 MSJ-ORD                  PIC  X(35) VALUE "Transferimos".
-       77 MSJ-DST                  PIC  X(35) VALUE "Nos transfieren".
+       77 MSJ-ORD                  PIC  X(35).
+       77 MSJ-DST                  PIC  X(35).
+
+       77 TIPO-TRF                 PIC  X.
+       77 TRF-DIA                  PIC  9(2).
+       77 TRF-MES                  PIC  9(2).
+       77 TRF-ANO                  PIC  9(4).
 
        LINKAGE SECTION.
        77 TNUM                     PIC  9(16).
@@ -121,9 +126,32 @@
            05 FILLER LINE 10 COL 42 PIC 99 FROM MOV-SALDOPOS-DEC.
            05 FILLER LINE 10 COL 45 VALUE "EUR".
 
+       01 PANTALLA-TIPO-TRF.
+           05 FILLER LINE 18 COL 19
+              VALUE "Tipo (P=Puntual / M=Mensual): ".
+           05 TIPO-ACC AUTO UNDERLINE LINE 18 COL 49
+              PIC X USING TIPO-TRF.
+
+       01 PANTALLA-FECHA-PUNTUAL.
+           05 FILLER LINE 19 COL 19
+              VALUE "Fecha (DD/MM/AAAA) :   /  /    ".
+           05 D-ACC AUTO UNDERLINE LINE 19 COL 40
+              PIC 9(2) USING TRF-DIA.
+           05 M-ACC AUTO UNDERLINE LINE 19 COL 43
+              PIC 9(2) USING TRF-MES.
+           05 A-ACC AUTO UNDERLINE LINE 19 COL 46
+              PIC 9(4) USING TRF-ANO.
+
+       01 PANTALLA-DIA-MENSUAL.
+           05 FILLER LINE 19 COL 19
+              VALUE "Dia del mes (01-28):   ".
+           05 DM-ACC AUTO UNDERLINE LINE 19 COL 40
+              PIC 9(2) USING TRF-DIA.
+
        PROCEDURE DIVISION USING TNUM.
        INICIO.
            SET ENVIRONMENT 'COB_SCREEN_EXCEPTIONS' TO 'Y'.
+           SET ENVIRONMENT 'COB_SCREEN_ESC' TO 'Y'.
 
            INITIALIZE CUENTA-DESTINO.
            INITIALIZE NOMBRE-DESTINO.
@@ -132,6 +160,10 @@
            INITIALIZE LAST-MOV-NUM.
            INITIALIZE LAST-USER-ORD-MOV-NUM.
            INITIALIZE LAST-USER-DST-MOV-NUM.
+           INITIALIZE TIPO-TRF.
+           INITIALIZE TRF-DIA.
+           INITIALIZE TRF-MES.
+           INITIALIZE TRF-ANO.
 
        IMPRIMIR-CABECERA.
            DISPLAY BLANK-SCREEN.
@@ -197,23 +229,21 @@
            COMPUTE CENT-SALDO-ORD-USER = (MOV-SALDOPOS-ENT * 100)
                                          + MOV-SALDOPOS-DEC.
 
-           ACCEPT FILTRO-CUENTA ON EXCEPTION
+           ACCEPT FILTRO-CUENTA.
            IF ESC-PRESSED THEN
                EXIT PROGRAM
-           ELSE
-               GO TO INDICAR-CTA-DST
            END-IF.
 
            IF CUENTA-DESTINO = 0 THEN
-               DISPLAY (20, 19) 
-                   "Error: Cuenta invalida o vacia!!                "
+               DISPLAY (20, 19)
+                   "Error: Cuenta invalida o vacia!!"
                    WITH BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
            IF CUENTA-DESTINO = TNUM THEN
-               DISPLAY (20, 19) 
-                   "Error: No puedes transferirte a ti mismo        "
+               DISPLAY (20, 19)
+                   "Error: No puedes transferirte a ti mismo"
                    WITH BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
@@ -222,20 +252,91 @@
                                      + EURDEC-USUARIO.
 
            IF CENT-IMPOR-USER <= 0 THEN
-               DISPLAY (20, 19) 
-                   "Error: Cantidad invalida (No use letras ni ',')"
+               DISPLAY (20, 19)
+                   "Error: Cantidad invalida"
                    WITH BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
            IF CENT-IMPOR-USER > CENT-SALDO-ORD-USER THEN
-               DISPLAY (20, 19) 
-                   "Error: Indique una cantidad menor!!             "
+               DISPLAY (20, 19)
+                   "Error: Indique una cantidad menor!!"
                    WITH BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
-           DISPLAY (20, 19) 
+           DISPLAY (20, 19)
+               "                                        "
+               WITH BACKGROUND-COLOR BLACK.
+
+       PEDIR-TIPO-TRF.
+           DISPLAY (19, 1)
+               "                                        ".
+           DISPLAY (19, 41)
+               "                                        ".
+           DISPLAY (20, 1)
+               "                                        ".
+           DISPLAY (20, 41)
+               "                                        ".
+
+           ACCEPT PANTALLA-TIPO-TRF.
+           IF ESC-PRESSED THEN
+               EXIT PROGRAM
+           END-IF.
+
+           IF TIPO-TRF NOT = "P" AND TIPO-TRF NOT = "p" AND
+              TIPO-TRF NOT = "M" AND TIPO-TRF NOT = "m" THEN
+               DISPLAY (20, 19)
+                   "Error: Indique P o M                            "
+                   WITH BACKGROUND-COLOR RED
+               GO TO PEDIR-TIPO-TRF
+           END-IF.
+
+           DISPLAY (20, 19)
+               "                                                "
+               WITH BACKGROUND-COLOR BLACK.
+
+           IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
+               GO TO PEDIR-FECHA-PUNTUAL
+           ELSE
+               GO TO PEDIR-DIA-MENSUAL
+           END-IF.
+
+       PEDIR-FECHA-PUNTUAL.
+           ACCEPT PANTALLA-FECHA-PUNTUAL.
+           IF ESC-PRESSED THEN
+               EXIT PROGRAM
+           END-IF.
+
+           IF TRF-DIA NOT NUMERIC OR TRF-MES NOT NUMERIC OR
+              TRF-ANO NOT NUMERIC OR
+              TRF-DIA < 1 OR TRF-DIA > 31 OR
+              TRF-MES < 1 OR TRF-MES > 12 OR
+              TRF-ANO < 2024 THEN
+               DISPLAY (20, 19)
+                   "Error: Fecha invalida (Use 4 cifras para ano)   "
+                   WITH BACKGROUND-COLOR RED
+               GO TO PEDIR-FECHA-PUNTUAL
+           END-IF.
+
+           GO TO FIN-PEDIR-FECHA.
+
+       PEDIR-DIA-MENSUAL.
+           ACCEPT PANTALLA-DIA-MENSUAL.
+           IF ESC-PRESSED THEN
+               EXIT PROGRAM
+           END-IF.
+
+           IF TRF-DIA NOT NUMERIC OR
+              TRF-DIA < 1 OR TRF-DIA > 28 THEN
+               DISPLAY (20, 19)
+                   "Error: Dia invalido (01-28)                     "
+                   WITH BACKGROUND-COLOR RED
+               GO TO PEDIR-DIA-MENSUAL
+           END-IF.
+
+       FIN-PEDIR-FECHA.
+           DISPLAY (20, 19)
                "                                                "
                WITH BACKGROUND-COLOR BLACK.
 
@@ -253,7 +354,7 @@
            DISPLAY (16, 61) ",".
            DISPLAY (16, 66) "EUR".
 
-           ACCEPT FILTRO-CUENTA ON EXCEPTION
+           ACCEPT FILTRO-CUENTA.
            IF ESC-PRESSED THEN
                EXIT PROGRAM
            END-IF.
@@ -278,13 +379,11 @@
            DISPLAY (24, 66) "ESC - Cancelar".
 
        ENTER-VERIFICACION.
-           ACCEPT PRESSED-KEY LINE 24 COLUMN 80 ON EXCEPTION
+           ACCEPT (24, 80) PRESSED-KEY.
            IF ESC-PRESSED THEN
                EXIT PROGRAM
-           ELSE
-               GO TO ENTER-VERIFICACION
            END-IF.
-           IF ENTER-PRESSED
+           IF ENTER-PRESSED THEN
                GO TO VERIFICACION-CTA-CORRECTA
            ELSE
                GO TO ENTER-VERIFICACION
@@ -329,6 +428,22 @@
            END-IF.
 
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
+
+           IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
+               MOVE "Transferimos (Puntual)" TO MSJ-ORD
+               MOVE "Nos transfieren (Puntual)" TO MSJ-DST
+               MOVE TRF-ANO TO ANO
+               MOVE TRF-MES TO MES
+               MOVE TRF-DIA TO DIA
+           ELSE
+               MOVE SPACES TO MSJ-ORD
+               MOVE SPACES TO MSJ-DST
+               STRING "Trf. (Mensual D:" TRF-DIA ")"
+                   DELIMITED BY SIZE INTO MSJ-ORD
+               STRING "Nos trf. (Mensual D:" TRF-DIA ")"
+                   DELIMITED BY SIZE INTO MSJ-DST
+               MOVE TRF-DIA TO DIA
+           END-IF.
 
            ADD 1 TO LAST-MOV-NUM.
 
@@ -404,11 +519,12 @@
            DISPLAY (24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
-           ACCEPT (24, 80) PRESSED-KEY
-           IF ENTER-PRESSED
+           ACCEPT (24, 80) PRESSED-KEY.
+           IF ENTER-PRESSED THEN
                EXIT PROGRAM
            ELSE
-               GO TO EXIT-ENTER.
+               GO TO EXIT-ENTER
+           END-IF.
 
        USER-BAD.
            CLOSE TARJETAS.
@@ -418,4 +534,3 @@
                     BACKGROUND-COLOR IS RED.
            DISPLAY (24, 33) "Enter - Salir".
            GO TO EXIT-ENTER.
-           
