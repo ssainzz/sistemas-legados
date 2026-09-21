@@ -76,10 +76,14 @@
        77 MES2-USUARIO              PIC   9(2).
        77 ANO2-USUARIO              PIC   9(4).
 
-       77 EURENT1-USUARIO           PIC  S9(7).
+       77 EURENT1-USUARIO           PIC   9(7).
        77 EURDEC1-USUARIO           PIC   9(2).
-       77 EURENT2-USUARIO           PIC  S9(7).
+       77 EURENT2-USUARIO           PIC   9(7).
        77 EURDEC2-USUARIO           PIC   9(2).
+
+       77 FILTRO-IMPORTE-ACTIVO     PIC   9(1) VALUE 0.
+
+       77 WS-PUNTO                  PIC   X VALUE ".".
 
        77 FECHA-MIN                 PIC   9(8).
        77 FECHA-MOV                 PIC   9(8).
@@ -98,15 +102,19 @@
 
        77 CONTADOR                  PIC   9(2).
        77 ITERACIONES               PIC   9(2).
-       77 COPIA-MOV                 PIC  9(35).
+       77 COPIA-MOV                 PIC   9(35).
 
        LINKAGE SECTION.
-       77 TNUM                      PIC  9(16).
+       77 TNUM                      PIC   9(16).
 
 
        SCREEN SECTION.
        01 BLANK-SCREEN.
            05 FILLER LINE 1 BLANK SCREEN BACKGROUND-COLOR BLACK.
+
+       01 ESPERA-TECLA-MOVIMIENTOS.
+           05 FILLER LINE 24 COL 80 PIC X USING PRESSED-KEY
+               BACKGROUND-COLOR BLACK FOREGROUND-COLOR BLACK.
 
        01 FILTRO-MOVIMIENTOS.
            05 DIA-MIN BLANK ZERO AUTO UNDERLINE
@@ -122,15 +130,15 @@
            05 ANO-MAX BLANK ZERO AUTO UNDERLINE
                LINE 13 COL 56 PIC 9(4) USING ANO2-USUARIO.
            05 EUR-ENT-MIN BLANK ZERO AUTO UNDERLINE
-               SIGN IS LEADING SEPARATE
-               LINE 15 COL 30 PIC -9(7) USING EURENT1-USUARIO.
+               LINE 15 COL 30 PIC 9(7) USING EURENT1-USUARIO.
+           05 PUNTO-MIN LINE 15 COL 37 PIC X FROM WS-PUNTO.
            05 EUR-DEC-MIN BLANK ZERO AUTO UNDERLINE
-               LINE 15 COL 39 PIC 9(2) USING EURDEC1-USUARIO.
+               LINE 15 COL 38 PIC 9(2) USING EURDEC1-USUARIO.
            05 EUR-ENT-MAX BLANK ZERO AUTO UNDERLINE
-               SIGN IS LEADING SEPARATE
-               LINE 15 COL 48 PIC -9(7) USING EURENT2-USUARIO.
-           05 EUR-DEC-MAX BLANK ZERO UNDERLINE
-               LINE 15 COL 57 PIC 9(2) USING EURDEC2-USUARIO.
+               LINE 15 COL 48 PIC 9(7) USING EURENT2-USUARIO.
+           05 PUNTO-MAX LINE 15 COL 55 PIC X FROM WS-PUNTO.
+           05 EUR-DEC-MAX BLANK ZERO AUTO UNDERLINE
+               LINE 15 COL 56 PIC 9(2) USING EURDEC2-USUARIO.
 
        01 FILA-MOVIMIENTO-PAR.
 
@@ -251,6 +259,7 @@
            INITIALIZE EURDEC1-USUARIO.
            INITIALIZE EURENT2-USUARIO.
            INITIALIZE EURDEC2-USUARIO.
+           MOVE 0 TO FILTRO-IMPORTE-ACTIVO.
 
            DISPLAY(8, 8) "Se  mostraran los ultimos movimientos,".
            DISPLAY(8, 47) "de mas a menos recientes.".
@@ -260,11 +269,12 @@
 
            DISPLAY(13, 20) "Entre las fechas   /  /     y   /  /    ".
            DISPLAY(15, 15)
-            "Cantidad entre         .   EUR y         .   EUR".
+            "Cantidad entre           EUR y             EUR".
 
            DISPLAY(24, 01) "Enter - Aceptar".
            DISPLAY(24, 65) "ESC - Cancelar".
 
+           MOVE SPACE TO PRESSED-KEY.
            ACCEPT FILTRO-MOVIMIENTOS ON EXCEPTION
                IF ESC-PRESSED
                    EXIT PROGRAM
@@ -278,19 +288,20 @@
                        MOVE 99   TO MES2-USUARIO
                        MOVE 9999 TO ANO2-USUARIO.
 
-           IF EURENT2-USUARIO = 0
-               IF EURDEC2-USUARIO = 0
-                   IF EURENT1-USUARIO = 0
-                       IF EURDEC1-USUARIO = 0
-                           MOVE 9999999  TO EURENT2-USUARIO
-                           MOVE 99       TO EURDEC2-USUARIO
-                           MOVE -9999999  TO EURENT1-USUARIO
-                           MOVE 99        TO EURDEC1-USUARIO.
+           IF EURENT1-USUARIO NOT = 0 OR EURDEC1-USUARIO NOT = 0
+              OR EURENT2-USUARIO NOT = 0 OR EURDEC2-USUARIO NOT = 0
+               MOVE 1 TO FILTRO-IMPORTE-ACTIVO.
+
+           IF FILTRO-IMPORTE-ACTIVO = 0
+               MOVE 9999999  TO EURENT2-USUARIO
+               MOVE 99       TO EURDEC2-USUARIO
+               MOVE 0        TO EURENT1-USUARIO
+               MOVE 0        TO EURDEC1-USUARIO.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
 
            OPEN INPUT F-MOVIMIENTOS.
-               IF FSM <> 30
+               IF FSM NOT = 00
                    GO TO PSYS-ERR.
 
        POSICIONAR-FINAL.
@@ -335,7 +346,9 @@
 
        WAIT-ORDER.
 
-           ACCEPT(24, 80) PRESSED-KEY 
+           MOVE SPACE TO PRESSED-KEY.
+
+           ACCEPT ESPERA-TECLA-MOVIMIENTOS ON EXCEPTION
 
               IF ESC-PRESSED THEN
                   CLOSE F-MOVIMIENTOS
@@ -349,6 +362,16 @@
               IF PGUP-PRESSED THEN
                   GO TO FLECHA-ARRIBA
               END-IF
+
+              IF DOWN-ARROW-PRESSED THEN
+                  GO TO FLECHA-ABAJO
+              END-IF
+
+              IF UP-ARROW-PRESSED THEN
+                  GO TO FLECHA-ARRIBA
+              END-IF
+
+           END-ACCEPT.
 
            GO TO WAIT-ORDER.
 
@@ -468,6 +491,7 @@
            DISPLAY(24, 33) "Enter - Aceptar".
 
        EXIT-ENTER.
+           MOVE SPACE TO PRESSED-KEY
            ACCEPT(24, 80) PRESSED-KEY
            IF ENTER-PRESSED
                EXIT PROGRAM
@@ -481,35 +505,37 @@
                MOVE 0 TO MOV-VALIDO.
 
            COMPUTE FECHA-MIN = (ANO1-USUARIO * 10000)
-                               + (MES1-USUARIO * 100)
-                               + DIA1-USUARIO.
+                              + (MES1-USUARIO * 100)
+                              + DIA1-USUARIO.
 
            COMPUTE FECHA-MOV = (MOV-ANO * 10000)
-                               + (MOV-MES * 100)
-                               + MOV-DIA.
+                              + (MOV-MES * 100)
+                              + MOV-DIA.
 
            COMPUTE FECHA-MAX = (ANO2-USUARIO * 10000)
-                               + (MES2-USUARIO * 100)
-                               + DIA2-USUARIO.
+                              + (MES2-USUARIO * 100)
+                              + DIA2-USUARIO.
 
            IF FECHA-MIN > FECHA-MOV
                MOVE 0 TO MOV-VALIDO.
            IF FECHA-MAX < FECHA-MOV
                MOVE 0 TO MOV-VALIDO.
 
-           COMPUTE CENT-MIN = (EURENT1-USUARIO * 100)
-                              + (EURDEC1-USUARIO).
+           IF FILTRO-IMPORTE-ACTIVO = 1
+               COMPUTE CENT-MIN = (EURENT1-USUARIO * 100)
+                                  + (EURDEC1-USUARIO)
 
-           COMPUTE CENT-MOV = (MOV-IMPORTE-ENT * 100)
-                              + (MOV-IMPORTE-DEC).
+               COMPUTE CENT-MOV = (MOV-IMPORTE-ENT * 100)
+                                  + (MOV-IMPORTE-DEC)
 
-           COMPUTE CENT-MAX = (EURENT2-USUARIO * 100)
-                              + (EURDEC2-USUARIO).
+               COMPUTE CENT-MAX = (EURENT2-USUARIO * 100)
+                                  + (EURDEC2-USUARIO)
 
-           IF CENT-MIN > CENT-MOV
-               MOVE 0 TO MOV-VALIDO.
-           IF CENT-MAX < CENT-MOV
-               MOVE 0 TO MOV-VALIDO.
+               IF CENT-MIN > CENT-MOV
+                   MOVE 0 TO MOV-VALIDO
+               IF CENT-MAX < CENT-MOV
+                   MOVE 0 TO MOV-VALIDO
+           END-IF.
 
 
        MOSTRAR-MOVIMIENTO.

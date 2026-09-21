@@ -3,7 +3,7 @@
 Los comandos siguientes deben ejecutarse desde la carpeta que contiene los programas COBOL:
 
 ```powershell
-cd "C:\Users\sainz\Documents\GitHub\sistemas-legados\p1\ATM Cobol_backup"
+cd "C:~\ATM Cobol_backup"
 ```
 
 ### 1. Generar o regenerar los ficheros UBD
