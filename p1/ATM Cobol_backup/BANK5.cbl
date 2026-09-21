@@ -226,9 +226,9 @@
            DISPLAY(8, 30) "Ingresar efectivo".
            DISPLAY(10, 19) "Saldo Actual: ".
            DISPLAY SALDO-DISPLAY.
-           DISPLAY(10, 19) "Billetes de 10 EUR:".
-           DISPLAY(11, 19) "Billetes de 20 EUR:".
-           DISPLAY(12, 19) "Billetes de 50 EUR:".
+           DISPLAY(12, 19) "Billetes de 10 EUR:".
+           DISPLAY(13, 19) "Billetes de 20 EUR:".
+           DISPLAY(14, 19) "Billetes de 50 EUR:".
 
        CONF2.
            ACCEPT ENTRADA-BILLETES ON EXCEPTION
@@ -254,6 +254,7 @@
            MOVE FUNCTION MOD(CENT-IMPOR-USER, 100) TO EURDEC-USUARIO.
 
            PERFORM INSERTAR-MOVIMIENTO THRU ESCRITURA.
+           GO TO PANT-INICIO.
 
        INSERTAR-MOVIMIENTO SECTION.
            OPEN I-O F-MOVIMIENTOS.
@@ -290,7 +291,7 @@
            WRITE MOVIMIENTO-REG INVALID KEY GO TO PSYS-ERR.
            CLOSE F-MOVIMIENTOS.
 
-           GO TO PANTALLA-INGRESO-INICIO.
+           EXIT PARAGRAPH.
 
 
 
