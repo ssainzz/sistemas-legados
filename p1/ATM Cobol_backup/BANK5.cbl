@@ -97,11 +97,11 @@
 
        01 ENTRADA-BILLETES.
            05 FILLER BLANK ZERO AUTO UNDERLINE
-               LINE 14 COL 40 PIC 9(3) USING NUM-BILLETES-10.
+               LINE 12 COL 40 PIC 9(3) USING NUM-BILLETES-10.
            05 FILLER BLANK ZERO AUTO UNDERLINE
-               LINE 15 COL 40 PIC 9(3) USING NUM-BILLETES-20.
+               LINE 13 COL 40 PIC 9(3) USING NUM-BILLETES-20.
            05 FILLER BLANK ZERO UNDERLINE
-               LINE 16 COL 40 PIC 9(3) USING NUM-BILLETES-50.
+               LINE 14 COL 40 PIC 9(3) USING NUM-BILLETES-50.
 
        01 SALDO-DISPLAY.
            05 FILLER SIGN IS LEADING SEPARATE
@@ -226,9 +226,9 @@
            DISPLAY(8, 30) "Ingresar efectivo".
            DISPLAY(10, 19) "Saldo Actual: ".
            DISPLAY SALDO-DISPLAY.
-           DISPLAY(12, 19) "Billetes de 10 EUR:".
-           DISPLAY(13, 19) "Billetes de 20 EUR:".
-           DISPLAY(14, 19) "Billetes de 50 EUR:".
+           DISPLAY(10, 19) "Billetes de 10 EUR:".
+           DISPLAY(11, 19) "Billetes de 20 EUR:".
+           DISPLAY(12, 19) "Billetes de 50 EUR:".
 
        CONF2.
            ACCEPT ENTRADA-BILLETES ON EXCEPTION
