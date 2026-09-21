@@ -294,10 +294,17 @@
            CLOSE F-MOVIMIENTOS.
            MOVE LAST-USER-DST-MOV-NUM TO MOV-NUM.
            PERFORM MOVIMIENTOS-OPEN THRU MOVIMIENTOS-OPEN.
-           READ F-MOVIMIENTOS INVALID KEY GO PSYS-ERR.
 
-           COMPUTE CENT-SALDO-DST-USER = (MOV-SALDOPOS-ENT * 100)
-                                         + MOV-SALDOPOS-DEC.
+           IF LAST-USER-DST-MOV-NUM NOT = 0 THEN
+               READ F-MOVIMIENTOS KEY IS MOV-NUM
+                   INVALID KEY GO PSYS-ERR
+               END-READ
+               COMPUTE CENT-SALDO-DST-USER = (MOV-SALDOPOS-ENT * 100)
+                                             + MOV-SALDOPOS-DEC
+               END-COMPUTE
+           ELSE
+               MOVE 0 TO CENT-SALDO-DST-USER
+           END-IF.
 
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
