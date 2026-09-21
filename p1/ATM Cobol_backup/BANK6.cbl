@@ -418,3 +418,4 @@
                     BACKGROUND-COLOR IS RED.
            DISPLAY (24, 33) "Enter - Salir".
            GO TO EXIT-ENTER.
+           
