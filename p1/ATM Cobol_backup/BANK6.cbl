@@ -107,6 +107,9 @@
        77 LAST-USER-DST-MOV-NUM    PIC  9(35).
        77 LAST-TRF-ID              PIC  9(8).
 
+       77 SALDO-USER-ENT           PIC  S9(9).
+       77 SALDO-USER-DEC           PIC   9(2).
+
        77 EURENT-USUARIO           PIC   9(7).
        77 EURDEC-USUARIO           PIC   9(2).
        77 CUENTA-DESTINO           PIC  9(16).
@@ -145,11 +148,10 @@
                LINE 16 COL 63 PIC 9(2) USING EURDEC-USUARIO.
 
        01 SALDO-DISPLAY.
-           05 FILLER SIGN IS LEADING SEPARATE
-               LINE 10 COL 33 PIC -9(7) FROM MOV-SALDOPOS-ENT.
-           05 FILLER LINE 10 COL 41 VALUE ",".
-           05 FILLER LINE 10 COL 42 PIC 99 FROM MOV-SALDOPOS-DEC.
-           05 FILLER LINE 10 COL 45 VALUE "EUR".
+           05 FILLER LINE 10 COL 33 PIC 9(9) FROM MOV-SALDOPOS-ENT.
+           05 FILLER LINE 10 COL 42 VALUE ",".
+           05 FILLER LINE 10 COL 43 PIC 99 FROM MOV-SALDOPOS-DEC.
+           05 FILLER LINE 10 COL 46 VALUE "EUR".
 
        01 PANTALLA-TIPO-TRF.
            05 FILLER LINE 18 COL 19
@@ -186,6 +188,8 @@
            INITIALIZE LAST-USER-ORD-MOV-NUM.
            INITIALIZE LAST-USER-DST-MOV-NUM.
            INITIALIZE LAST-TRF-ID.
+           INITIALIZE SALDO-USER-ENT.
+           INITIALIZE SALDO-USER-DEC.
            INITIALIZE TIPO-TRF.
            INITIALIZE TRF-DIA.
            INITIALIZE TRF-MES.
@@ -218,6 +222,8 @@
            IF MOV-TARJETA = TNUM THEN
                IF LAST-USER-ORD-MOV-NUM < MOV-NUM THEN
                    MOVE MOV-NUM TO LAST-USER-ORD-MOV-NUM
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-USER-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-USER-DEC
                END-IF
            END-IF.
            IF LAST-MOV-NUM < MOV-NUM THEN
@@ -235,15 +241,14 @@
            DISPLAY (24, 66) "ESC - Cancelar".
 
            IF LAST-USER-ORD-MOV-NUM = 0 THEN
-               GO TO NO-MOVIMIENTOS
+               MOVE 0 TO MOV-SALDOPOS-ENT
+               MOVE 0 TO MOV-SALDOPOS-DEC
+           ELSE
+               MOVE SALDO-USER-ENT TO MOV-SALDOPOS-ENT
+               MOVE SALDO-USER-DEC TO MOV-SALDOPOS-DEC
            END-IF.
 
-           MOVE LAST-USER-ORD-MOV-NUM TO MOV-NUM.
-
-           PERFORM MOVIMIENTOS-OPEN THRU MOVIMIENTOS-OPEN.
-           READ F-MOVIMIENTOS INVALID KEY GO PSYS-ERR.
            DISPLAY SALDO-DISPLAY.
-           CLOSE F-MOVIMIENTOS.
 
        INDICAR-CTA-DST.
            DISPLAY (12, 19) "Indica la cuenta destino".
@@ -251,9 +256,6 @@
            DISPLAY (16, 19) "Indique la cantidad a transferir".
            DISPLAY (16, 61) ",".
            DISPLAY (16, 66) "EUR".
-
-           COMPUTE CENT-SALDO-ORD-USER = (MOV-SALDOPOS-ENT * 100)
-                                         + MOV-SALDOPOS-DEC.
 
            ACCEPT FILTRO-CUENTA.
            IF ESC-PRESSED THEN
@@ -280,13 +282,6 @@
            IF CENT-IMPOR-USER <= 0 THEN
                DISPLAY (20, 19)
                    "Error: Cantidad invalida"
-                   WITH BACKGROUND-COLOR RED
-               GO TO INDICAR-CTA-DST
-           END-IF.
-
-           IF CENT-IMPOR-USER > CENT-SALDO-ORD-USER THEN
-               DISPLAY (20, 19)
-                   "Error: Indique una cantidad menor!!"
                    WITH BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
@@ -368,38 +363,17 @@
 
            GO TO REALIZAR-TRF-VERIFICACION.
 
-       NO-MOVIMIENTOS.
-           DISPLAY (10, 51) "0".
-           DISPLAY (10, 52) ".".
-           DISPLAY (10, 53) "00".
-           DISPLAY (10, 54) "EUR".
-
-           DISPLAY (12, 19) "Indica la cuenta destino ".
-           DISPLAY (14, 19) "y nombre del titular".
-           DISPLAY (16, 19) "Indique la cantidad a transferir".
-           DISPLAY (16, 61) ",".
-           DISPLAY (16, 66) "EUR".
-
-           ACCEPT FILTRO-CUENTA.
-           IF ESC-PRESSED THEN
-               EXIT PROGRAM
-           END-IF.
-
-           DISPLAY (20, 19) "Indique una cantidad menor!!"
-            WITH BACKGROUND-COLOR RED.
-
-           GO TO NO-MOVIMIENTOS.
-
        REALIZAR-TRF-VERIFICACION.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (08, 30) "Ordenar Transferencia".
            DISPLAY (11, 19) "Va a programar una transferencia de:".
-           DISPLAY (11, 38) EURENT-USUARIO.
-           DISPLAY (11, 45) ".".
-           DISPLAY (11, 46) EURDEC-USUARIO.
-           DISPLAY (11, 49) "EUR de su cuenta".
-           DISPLAY (12, 19) "a la cuenta cuyo titular es".
-           DISPLAY (12, 48) NOMBRE-DESTINO.
+           DISPLAY (12, 19) "Importe: ".
+           DISPLAY (12, 28) EURENT-USUARIO.
+           DISPLAY (12, 35) ".".
+           DISPLAY (12, 36) EURDEC-USUARIO.
+           DISPLAY (12, 39) " EUR de su cuenta".
+           DISPLAY (13, 19) "a la cuenta cuyo titular es".
+           DISPLAY (13, 48) NOMBRE-DESTINO.
 
            DISPLAY (24, 2) "Enter - Confirmar".
            DISPLAY (24, 66) "ESC - Cancelar".
@@ -503,6 +477,7 @@
 
        PSYS-ERR.
            CLOSE TARJETAS.
+           CLOSE F-MOVIMIENTOS.
            IF FS-TRF = "00" CLOSE F-TRANSFERENCIAS END-IF.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
