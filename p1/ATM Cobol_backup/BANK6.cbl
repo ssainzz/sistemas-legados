@@ -148,10 +148,10 @@
                LINE 16 COL 63 PIC 9(2) USING EURDEC-USUARIO.
 
        01 SALDO-DISPLAY.
-           05 FILLER LINE 10 COL 33 PIC 9(9) FROM MOV-SALDOPOS-ENT.
-           05 FILLER LINE 10 COL 42 VALUE ",".
-           05 FILLER LINE 10 COL 43 PIC 99 FROM MOV-SALDOPOS-DEC.
-           05 FILLER LINE 10 COL 46 VALUE "EUR".
+           05 FILLER LINE 10 COL 33 PIC 9(7) FROM MOV-SALDOPOS-ENT.
+           05 FILLER LINE 10 COL 40 VALUE ",".
+           05 FILLER LINE 10 COL 41 PIC 99 FROM MOV-SALDOPOS-DEC.
+           05 FILLER LINE 10 COL 44 VALUE "EUR".
 
        01 PANTALLA-TIPO-TRF.
            05 FILLER LINE 18 COL 19
@@ -166,7 +166,7 @@
               PIC 9(2) USING TRF-DIA.
            05 FILLER BLANK WHEN ZERO UNDERLINE AUTO LINE 19 COL 43
               PIC 9(2) USING TRF-MES.
-           05 FILLER BLANK WHEN ZERO UNDERLINE AUTO LINE 19 COL 46
+           05 FILLER BLANK WHEN ZERO UNDERLINE LINE 19 COL 46
               PIC 9(4) USING TRF-ANO.
 
        01 PANTALLA-DIA-MENSUAL.
@@ -366,12 +366,11 @@
        REALIZAR-TRF-VERIFICACION.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (08, 30) "Ordenar Transferencia".
-           DISPLAY (11, 19) "Va a programar una transferencia de:".
-           DISPLAY (12, 19) "Importe: ".
-           DISPLAY (12, 28) EURENT-USUARIO.
-           DISPLAY (12, 35) ".".
-           DISPLAY (12, 36) EURDEC-USUARIO.
-           DISPLAY (12, 39) " EUR de su cuenta".
+           DISPLAY (11, 23) "Va a programar una transferencia de:".
+           DISPLAY (12, 27) EURENT-USUARIO.
+           DISPLAY (12, 34) ".".
+           DISPLAY (12, 35) EURDEC-USUARIO.
+           DISPLAY (12, 38) " EUR de su cuenta".
            DISPLAY (13, 19) "a la cuenta cuyo titular es".
            DISPLAY (13, 48) NOMBRE-DESTINO.
 
@@ -468,9 +467,9 @@
 
        P-EXITO.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY (8, 30) "Programar transferencia".
-           DISPLAY (11, 14) "Transferencia programada con exito!".
-           DISPLAY (13, 20) "Queda pendiente de ejecucion.".
+           DISPLAY (8, 29) "Programar transferencia".
+           DISPLAY (11, 23) "Transferencia programada con exito!".
+           DISPLAY (13, 26) "Queda pendiente de ejecucion.".
            DISPLAY (24, 33) "Enter - Aceptar".
 
            GO TO EXIT-ENTER.
