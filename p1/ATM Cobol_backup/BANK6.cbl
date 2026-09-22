@@ -160,17 +160,17 @@
        01 PANTALLA-FECHA-PUNTUAL.
            05 FILLER LINE 19 COL 19
               VALUE "Fecha (DD/MM/AAAA) :   /  /    ".
-           05 D-ACC AUTO UNDERLINE LINE 19 COL 40
+           05 FILLER BLANK WHEN ZERO UNDERLINE AUTO LINE 19 COL 40
               PIC 9(2) USING TRF-DIA.
-           05 M-ACC AUTO UNDERLINE LINE 19 COL 43
+           05 FILLER BLANK WHEN ZERO UNDERLINE AUTO LINE 19 COL 43
               PIC 9(2) USING TRF-MES.
-           05 A-ACC AUTO UNDERLINE LINE 19 COL 46
+           05 FILLER BLANK WHEN ZERO UNDERLINE AUTO LINE 19 COL 46
               PIC 9(4) USING TRF-ANO.
 
        01 PANTALLA-DIA-MENSUAL.
            05 FILLER LINE 19 COL 19
               VALUE "Dia del mes (01-28):   ".
-           05 DM-ACC AUTO UNDERLINE LINE 19 COL 40
+           05 FILLER BLANK WHEN ZERO UNDERLINE LINE 19 COL 40
               PIC 9(2) USING TRF-DIA.
 
        PROCEDURE DIVISION USING TNUM.
@@ -393,7 +393,7 @@
        REALIZAR-TRF-VERIFICACION.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (08, 30) "Ordenar Transferencia".
-           DISPLAY (11, 19) "Va a transferir:".
+           DISPLAY (11, 19) "Va a programar una transferencia de:".
            DISPLAY (11, 38) EURENT-USUARIO.
            DISPLAY (11, 45) ".".
            DISPLAY (11, 46) EURDEC-USUARIO.
@@ -494,7 +494,7 @@
 
        P-EXITO.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-           DISPLAY (8, 30) "Ordenar transferencia".
+           DISPLAY (8, 30) "Programar transferencia".
            DISPLAY (11, 14) "Transferencia programada con exito!".
            DISPLAY (13, 20) "Queda pendiente de ejecucion.".
            DISPLAY (24, 33) "Enter - Aceptar".

@@ -20,6 +20,18 @@
            RECORD KEY IS INUM
            FILE STATUS IS FSI.
 
+           SELECT F-MOVIMIENTOS ASSIGN TO DISK
+           ORGANIZATION IS INDEXED
+           ACCESS MODE IS DYNAMIC
+           RECORD KEY IS MOV-NUM
+           FILE STATUS IS FSM.
+
+           SELECT F-TRANSFERENCIAS ASSIGN TO DISK
+           ORGANIZATION IS INDEXED
+           ACCESS MODE IS DYNAMIC
+           RECORD KEY IS TRF-ID
+           FILE STATUS IS FS-TRF.
+
 
        DATA DIVISION.
        FILE SECTION.
@@ -37,10 +49,42 @@
            02 INUM      PIC 9(16).
            02 IINTENTOS PIC 9(1).
 
+       FD F-MOVIMIENTOS
+           LABEL RECORD STANDARD
+           VALUE OF FILE-ID IS "movimientos.ubd".
+       01 MOVIMIENTO-REG.
+           02 MOV-NUM              PIC  9(35).
+           02 MOV-TARJETA          PIC  9(16).
+           02 MOV-ANO              PIC   9(4).
+           02 MOV-MES              PIC   9(2).
+           02 MOV-DIA              PIC   9(2).
+           02 MOV-HOR              PIC   9(2).
+           02 MOV-MIN              PIC   9(2).
+           02 MOV-SEG              PIC   9(2).
+           02 MOV-IMPORTE-ENT      PIC  S9(7).
+           02 MOV-IMPORTE-DEC      PIC   9(2).
+           02 MOV-CONCEPTO         PIC  X(35).
+           02 MOV-SALDOPOS-ENT     PIC  S9(9).
+           02 MOV-SALDOPOS-DEC     PIC   9(2).
+
+       FD F-TRANSFERENCIAS
+           LABEL RECORD STANDARD
+           VALUE OF FILE-ID IS "transferencias.ubd".
+       01 TRF-REG.
+           02 TRF-ID              PIC 9(8).
+           02 TRF-ORIGEN          PIC 9(16).
+           02 TRF-DESTINO         PIC 9(16).
+           02 TRF-IMPORTE-ENT     PIC 9(7).
+           02 TRF-IMPORTE-DEC     PIC 9(2).
+           02 TRF-TIPO            PIC X.
+           02 TRF-FECHA           PIC 9(8).
+           02 TRF-ESTADO          PIC X.
 
        WORKING-STORAGE SECTION.
        77 FST                      PIC  X(2).
        77 FSI                      PIC  X(2).
+       77 FSM                      PIC  X(2).
+       77 FS-TRF                   PIC  X(2).
 
        78 BLACK   VALUE 0.
        78 BLUE    VALUE 1.
@@ -75,6 +119,28 @@
        77 PIN-INTRODUCIDO          PIC  9(4).
        77 CHOICE                   PIC X.
 
+       *> Variables auxiliares para la ejecución de transferencias
+       77 HOY-NUM                  PIC  9(8).
+       77 CURRENT-TRF-ID           PIC  9(8).
+       77 MAX-TRF-ID               PIC  9(8).
+       77 MAX-MOV-NUM              PIC  9(35).
+       77 LAST-ORIGEN-MOV-NUM      PIC  9(35).
+       77 LAST-DESTINO-MOV-NUM     PIC  9(35).
+       77 SALDO-ORIGEN-ENT         PIC S9(9).
+       77 SALDO-ORIGEN-DEC         PIC  9(2).
+       77 SALDO-DESTINO-ENT        PIC S9(9).
+       77 SALDO-DESTINO-DEC        PIC  9(2).
+       77 CENT-SALDO               PIC S9(11).
+       77 CENT-SALDO-DST           PIC S9(11).
+       77 CENT-TRF                 PIC S9(11).
+       77 CENT-NUEVO-SALDO         PIC S9(11).
+       77 CENT-NUEVO-SALDO-DST     PIC S9(11).
+       77 AUX-ANO                  PIC  9(4).
+       77 AUX-MES                  PIC  9(2).
+       77 AUX-DIA                  PIC  9(2).
+       77 AUX-RESTO                PIC  9(4).
+       77 NUEVA-FECHA              PIC  9(8).
+
 
        SCREEN SECTION.
        01 BLANK-SCREEN.
@@ -89,6 +155,10 @@
 
 
        PROCEDURE DIVISION.
+       INICIO.
+           *> Comprobación de transferencias pendientes al abrir la app
+           PERFORM VERIFICAR-TRANSFERENCIAS THRU FIN-VERIFICAR-TRF.
+
        IMPRIMIR-CABECERA.
 
            SET ENVIRONMENT 'COB_SCREEN_EXCEPTIONS' TO 'Y'
@@ -161,6 +231,9 @@
        PMENU.
            CLOSE TARJETAS.
            CLOSE INTENTOS.
+
+           *> Comprobación periódica al refrescar menú
+           PERFORM VERIFICAR-TRANSFERENCIAS THRU FIN-VERIFICAR-TRF.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (8, 15) "1 - Consultar saldo".
@@ -305,3 +378,190 @@
        REINICIAR-INTENTOS.
            MOVE 3 TO IINTENTOS.
            REWRITE INTENTOSREG INVALID KEY GO TO PSYS-ERR.
+
+
+       *> -----------------------------------------------------------
+       *> Rutinas de ejecución automática de transferencias
+       *> -----------------------------------------------------------
+       VERIFICAR-TRANSFERENCIAS.
+           MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
+           COMPUTE HOY-NUM = (ANO * 10000) + (MES * 100) + DIA.
+
+           OPEN I-O F-TRANSFERENCIAS.
+           IF FS-TRF = "35"
+               OPEN OUTPUT F-TRANSFERENCIAS
+               CLOSE F-TRANSFERENCIAS
+               OPEN I-O F-TRANSFERENCIAS
+           END-IF.
+           IF FS-TRF NOT = "00"
+               GO TO FIN-VERIFICAR-TRF.
+
+           OPEN I-O F-MOVIMIENTOS.
+           IF FSM = "35"
+               OPEN OUTPUT F-MOVIMIENTOS
+               CLOSE F-MOVIMIENTOS
+               OPEN I-O F-MOVIMIENTOS
+           END-IF.
+           IF FSM NOT = "00"
+               CLOSE F-TRANSFERENCIAS
+               GO TO FIN-VERIFICAR-TRF.
+
+           *> 1. Buscar Maximo ID de transferencias actual
+           MOVE 0 TO TRF-ID.
+           MOVE 0 TO MAX-TRF-ID.
+           START F-TRANSFERENCIAS KEY >= TRF-ID
+               INVALID KEY GO TO FIN-BUSCAR-MAX-TRF.
+       BUSCAR-MAX-TRF.
+           READ F-TRANSFERENCIAS NEXT RECORD AT END
+               GO TO FIN-BUSCAR-MAX-TRF.
+           IF TRF-ID > MAX-TRF-ID
+               MOVE TRF-ID TO MAX-TRF-ID.
+           GO TO BUSCAR-MAX-TRF.
+       FIN-BUSCAR-MAX-TRF.
+
+           *> 2. Bucle para buscar pendientes ('P') listas para ejecutar
+           MOVE 0 TO TRF-ID.
+           START F-TRANSFERENCIAS KEY >= TRF-ID
+               INVALID KEY GO TO FIN-BUCLE-TRF.
+       BUCLE-TRF.
+           READ F-TRANSFERENCIAS NEXT RECORD AT END
+               GO TO FIN-BUCLE-TRF.
+           MOVE TRF-ID TO CURRENT-TRF-ID.
+
+           IF TRF-ESTADO = "P" AND TRF-FECHA <= HOY-NUM
+               PERFORM EJECUTAR-TRF THRU FIN-EJECUTAR-TRF
+               *> Restaurar puntero de lectura que pudo ser alterado
+               MOVE CURRENT-TRF-ID TO TRF-ID
+               START F-TRANSFERENCIAS KEY = TRF-ID
+                   INVALID KEY CONTINUE
+               END-START
+           END-IF.
+           GO TO BUCLE-TRF.
+
+       FIN-BUCLE-TRF.
+           CLOSE F-MOVIMIENTOS.
+           CLOSE F-TRANSFERENCIAS.
+       FIN-VERIFICAR-TRF.
+           EXIT.
+
+       EJECUTAR-TRF.
+           *> Extraer ultimo movimiento de origen y destino
+           MOVE 0 TO MAX-MOV-NUM.
+           MOVE 0 TO LAST-ORIGEN-MOV-NUM.
+           MOVE 0 TO LAST-DESTINO-MOV-NUM.
+           MOVE 0 TO MOV-NUM.
+           START F-MOVIMIENTOS KEY >= MOV-NUM
+               INVALID KEY GO TO FIN-BUSQUEDA-MOV.
+       BUSQUEDA-MOV.
+           READ F-MOVIMIENTOS NEXT RECORD AT END
+               GO TO FIN-BUSQUEDA-MOV.
+           IF MOV-NUM > MAX-MOV-NUM
+               MOVE MOV-NUM TO MAX-MOV-NUM.
+           IF MOV-TARJETA = TRF-ORIGEN
+               IF MOV-NUM > LAST-ORIGEN-MOV-NUM
+                   MOVE MOV-NUM TO LAST-ORIGEN-MOV-NUM.
+           IF MOV-TARJETA = TRF-DESTINO
+               IF MOV-NUM > LAST-DESTINO-MOV-NUM
+                   MOVE MOV-NUM TO LAST-DESTINO-MOV-NUM.
+           GO TO BUSQUEDA-MOV.
+       FIN-BUSQUEDA-MOV.
+
+           *> Obtener y validar saldo origen
+           MOVE 0 TO SALDO-ORIGEN-ENT.
+           MOVE 0 TO SALDO-ORIGEN-DEC.
+           IF LAST-ORIGEN-MOV-NUM > 0
+               MOVE LAST-ORIGEN-MOV-NUM TO MOV-NUM
+               READ F-MOVIMIENTOS INVALID KEY CONTINUE
+               NOT INVALID KEY
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-ORIGEN-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-ORIGEN-DEC
+           END-IF.
+
+           COMPUTE CENT-SALDO = (SALDO-ORIGEN-ENT * 100) + 
+                                 SALDO-ORIGEN-DEC.
+           COMPUTE CENT-TRF = (TRF-IMPORTE-ENT * 100) + 
+                               TRF-IMPORTE-DEC.
+                               
+           IF CENT-SALDO < CENT-TRF
+               *> Sin saldo: Se marca como Fallida
+               MOVE CURRENT-TRF-ID TO TRF-ID
+               READ F-TRANSFERENCIAS INVALID KEY CONTINUE
+               MOVE "F" TO TRF-ESTADO
+               REWRITE TRF-REG
+               GO TO FIN-EJECUTAR-TRF
+           END-IF.
+
+           *> Realizar el Cargo al Origen
+           ADD 1 TO MAX-MOV-NUM.
+           MOVE MAX-MOV-NUM TO MOV-NUM.
+           MOVE TRF-ORIGEN TO MOV-TARJETA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN. 
+           MOVE SEGUNDOS TO MOV-SEG.
+           COMPUTE MOV-IMPORTE-ENT = TRF-IMPORTE-ENT * -1.
+           MOVE TRF-IMPORTE-DEC TO MOV-IMPORTE-DEC.
+           MOVE "Transferencia enviada" TO MOV-CONCEPTO.
+           COMPUTE CENT-NUEVO-SALDO = CENT-SALDO - CENT-TRF.
+           DIVIDE CENT-NUEVO-SALDO BY 100 GIVING MOV-SALDOPOS-ENT
+               REMAINDER MOV-SALDOPOS-DEC.
+           WRITE MOVIMIENTO-REG.
+
+           *> Realizar el Abono al Destino
+           MOVE 0 TO SALDO-DESTINO-ENT.
+           MOVE 0 TO SALDO-DESTINO-DEC.
+           IF LAST-DESTINO-MOV-NUM > 0
+               MOVE LAST-DESTINO-MOV-NUM TO MOV-NUM
+               READ F-MOVIMIENTOS INVALID KEY CONTINUE
+               NOT INVALID KEY
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-DESTINO-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-DESTINO-DEC
+           END-IF.
+
+           COMPUTE CENT-SALDO-DST = (SALDO-DESTINO-ENT * 100) + 
+                                     SALDO-DESTINO-DEC.
+           COMPUTE CENT-NUEVO-SALDO-DST = CENT-SALDO-DST + CENT-TRF.
+           ADD 1 TO MAX-MOV-NUM.
+           MOVE MAX-MOV-NUM TO MOV-NUM.
+           MOVE TRF-DESTINO TO MOV-TARJETA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN. 
+           MOVE SEGUNDOS TO MOV-SEG.
+           MOVE TRF-IMPORTE-ENT TO MOV-IMPORTE-ENT.
+           MOVE TRF-IMPORTE-DEC TO MOV-IMPORTE-DEC.
+           MOVE "Transferencia recibida" TO MOV-CONCEPTO.
+           DIVIDE CENT-NUEVO-SALDO-DST BY 100 GIVING MOV-SALDOPOS-ENT
+               REMAINDER MOV-SALDOPOS-DEC.
+           WRITE MOVIMIENTO-REG.
+
+           *> Actualizar el estado de la transferencia
+           MOVE CURRENT-TRF-ID TO TRF-ID.
+           READ F-TRANSFERENCIAS INVALID KEY CONTINUE.
+           MOVE "E" TO TRF-ESTADO.
+           REWRITE TRF-REG.
+
+           *> Reprogramar si es periodica mensual
+           IF TRF-TIPO = "M" OR TRF-TIPO = "m"
+               PERFORM PROGRAMAR-SIGUIENTE-TRF 
+                   THRU FIN-PROGRAMAR-SIGUIENTE
+           END-IF.
+       FIN-EJECUTAR-TRF.
+           EXIT.
+
+       PROGRAMAR-SIGUIENTE-TRF.
+           DIVIDE TRF-FECHA BY 10000 GIVING AUX-ANO REMAINDER AUX-RESTO.
+           DIVIDE AUX-RESTO BY 100 GIVING AUX-MES REMAINDER AUX-DIA.
+           ADD 1 TO AUX-MES.
+           IF AUX-MES > 12
+               MOVE 1 TO AUX-MES
+               ADD 1 TO AUX-ANO
+           END-IF.
+           COMPUTE NUEVA-FECHA = (AUX-ANO * 10000) + 
+                                 (AUX-MES * 100) + AUX-DIA.
+
+           ADD 1 TO MAX-TRF-ID.
+           MOVE MAX-TRF-ID TO TRF-ID.
+           MOVE NUEVA-FECHA TO TRF-FECHA.
+           MOVE "P" TO TRF-ESTADO.
+           WRITE TRF-REG.
+       FIN-PROGRAMAR-SIGUIENTE.
+           EXIT.
