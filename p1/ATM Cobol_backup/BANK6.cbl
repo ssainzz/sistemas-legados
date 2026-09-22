@@ -154,7 +154,7 @@
        01 PANTALLA-TIPO-TRF.
            05 FILLER LINE 18 COL 19
               VALUE "Tipo (P=Puntual / M=Mensual): ".
-           05 TIPO-ACC AUTO UNDERLINE LINE 18 COL 49
+           05 TIPO-ACC UNDERLINE LINE 18 COL 49
               PIC X USING TIPO-TRF.
 
        01 PANTALLA-FECHA-PUNTUAL.
@@ -435,7 +435,7 @@
            ELSE
                MOVE MES TO AUX-MES
                MOVE ANO TO AUX-ANO
-               IF TRF-DIA <= DIA THEN
+               IF TRF-DIA < DIA THEN
                    ADD 1 TO AUX-MES
                    IF AUX-MES > 12 THEN
                        MOVE 1 TO AUX-MES
