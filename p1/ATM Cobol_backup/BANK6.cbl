@@ -20,6 +20,12 @@
            RECORD KEY IS MOV-NUM
            FILE STATUS IS FSM.
 
+           SELECT F-TRANSFERENCIAS ASSIGN TO DISK
+           ORGANIZATION IS INDEXED
+           ACCESS MODE IS DYNAMIC
+           RECORD KEY IS TRF-ID
+           FILE STATUS IS FS-TRF.
+
        DATA DIVISION.
        FILE SECTION.
        FD TARJETAS
@@ -28,6 +34,7 @@
        01 TAJETAREG.
            02 TNUM-E      PIC 9(16).
            02 TPIN-E      PIC  9(4).
+       
        FD F-MOVIMIENTOS
            LABEL RECORD STANDARD
            VALUE OF FILE-ID IS "movimientos.ubd".
@@ -46,9 +53,23 @@
            02 MOV-SALDOPOS-ENT     PIC  S9(9).
            02 MOV-SALDOPOS-DEC     PIC   9(2).
 
+       FD F-TRANSFERENCIAS
+           LABEL RECORD STANDARD
+           VALUE OF FILE-ID IS "transferencias.ubd".
+       01 TRF-REG.
+           02 TRF-ID              PIC 9(8).
+           02 TRF-ORIGEN          PIC 9(16).
+           02 TRF-DESTINO         PIC 9(16).
+           02 TRF-IMPORTE-ENT     PIC 9(7).
+           02 TRF-IMPORTE-DEC     PIC 9(2).
+           02 TRF-TIPO            PIC X.
+           02 TRF-FECHA           PIC 9(8).
+           02 TRF-ESTADO          PIC X.
+
        WORKING-STORAGE SECTION.
        77 FST                      PIC   X(2).
        77 FSM                      PIC   X(2).
+       77 FS-TRF                   PIC   X(2).
 
        78 BLACK                  VALUE      0.
        78 BLUE                   VALUE      1.
@@ -84,6 +105,7 @@
        77 LAST-MOV-NUM             PIC  9(35).
        77 LAST-USER-ORD-MOV-NUM    PIC  9(35).
        77 LAST-USER-DST-MOV-NUM    PIC  9(35).
+       77 LAST-TRF-ID              PIC  9(8).
 
        77 EURENT-USUARIO           PIC   9(7).
        77 EURDEC-USUARIO           PIC   9(2).
@@ -101,6 +123,9 @@
        77 TRF-DIA                  PIC  9(2).
        77 TRF-MES                  PIC  9(2).
        77 TRF-ANO                  PIC  9(4).
+       77 TRF-FECHA-NUM            PIC  9(8).
+       77 AUX-MES                  PIC  9(2).
+       77 AUX-ANO                  PIC  9(4).
 
        LINKAGE SECTION.
        77 TNUM                     PIC  9(16).
@@ -160,6 +185,7 @@
            INITIALIZE LAST-MOV-NUM.
            INITIALIZE LAST-USER-ORD-MOV-NUM.
            INITIALIZE LAST-USER-DST-MOV-NUM.
+           INITIALIZE LAST-TRF-ID.
            INITIALIZE TIPO-TRF.
            INITIALIZE TRF-DIA.
            INITIALIZE TRF-MES.
@@ -287,7 +313,7 @@
            IF TIPO-TRF NOT = "P" AND TIPO-TRF NOT = "p" AND
               TIPO-TRF NOT = "M" AND TIPO-TRF NOT = "m" THEN
                DISPLAY (20, 19)
-                   "Error: Indique P o M                            "
+                   "Error: Indique P o M"
                    WITH BACKGROUND-COLOR RED
                GO TO PEDIR-TIPO-TRF
            END-IF.
@@ -398,116 +424,86 @@
            READ TARJETAS INVALID KEY GO TO USER-BAD.
            CLOSE TARJETAS.
 
-           PERFORM MOVIMIENTOS-OPEN THRU MOVIMIENTOS-OPEN.
-           MOVE 0 TO MOV-NUM.
-           MOVE 0 TO LAST-USER-DST-MOV-NUM.
-
-       LECTURA-SALDO-DST.
-           READ F-MOVIMIENTOS NEXT RECORD AT END GO TO GUARDAR-TRF.
-           IF MOV-TARJETA = CUENTA-DESTINO THEN
-               IF LAST-USER-DST-MOV-NUM < MOV-NUM THEN
-                   MOVE MOV-NUM TO LAST-USER-DST-MOV-NUM
-               END-IF
-           END-IF.
-           GO TO LECTURA-SALDO-DST.
+           GO TO GUARDAR-TRF.
 
        GUARDAR-TRF.
-           CLOSE F-MOVIMIENTOS.
-           MOVE LAST-USER-DST-MOV-NUM TO MOV-NUM.
-           PERFORM MOVIMIENTOS-OPEN THRU MOVIMIENTOS-OPEN.
-
-           IF LAST-USER-DST-MOV-NUM NOT = 0 THEN
-               READ F-MOVIMIENTOS KEY IS MOV-NUM
-                   INVALID KEY GO PSYS-ERR
-               END-READ
-               COMPUTE CENT-SALDO-DST-USER = (MOV-SALDOPOS-ENT * 100)
-                                             + MOV-SALDOPOS-DEC
-               END-COMPUTE
-           ELSE
-               MOVE 0 TO CENT-SALDO-DST-USER
-           END-IF.
-
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
            IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
-               MOVE "Transferimos (Puntual)" TO MSJ-ORD
-               MOVE "Nos transfieren (Puntual)" TO MSJ-DST
-               MOVE TRF-ANO TO ANO
-               MOVE TRF-MES TO MES
-               MOVE TRF-DIA TO DIA
+               COMPUTE TRF-FECHA-NUM = (TRF-ANO * 10000) +
+                                       (TRF-MES * 100) + TRF-DIA
            ELSE
-               MOVE SPACES TO MSJ-ORD
-               MOVE SPACES TO MSJ-DST
-               STRING "Trf. (Mensual D:" TRF-DIA ")"
-                   DELIMITED BY SIZE INTO MSJ-ORD
-               STRING "Nos trf. (Mensual D:" TRF-DIA ")"
-                   DELIMITED BY SIZE INTO MSJ-DST
-               MOVE TRF-DIA TO DIA
+               MOVE MES TO AUX-MES
+               MOVE ANO TO AUX-ANO
+               IF TRF-DIA <= DIA THEN
+                   ADD 1 TO AUX-MES
+                   IF AUX-MES > 12 THEN
+                       MOVE 1 TO AUX-MES
+                       ADD 1 TO AUX-ANO
+                   END-IF
+               END-IF
+               COMPUTE TRF-FECHA-NUM = (AUX-ANO * 10000) +
+                                       (AUX-MES * 100) + TRF-DIA
            END-IF.
 
-           ADD 1 TO LAST-MOV-NUM.
+           OPEN I-O F-TRANSFERENCIAS.
+           IF FS-TRF = "35" THEN
+               OPEN OUTPUT F-TRANSFERENCIAS
+               CLOSE F-TRANSFERENCIAS
+               OPEN I-O F-TRANSFERENCIAS
+           END-IF.
+           IF FS-TRF NOT = "00"
+               GO TO PSYS-ERR
+           END-IF.
 
-           MOVE LAST-MOV-NUM   TO MOV-NUM.
-           MOVE TNUM           TO MOV-TARJETA.
-           MOVE ANO            TO MOV-ANO.
-           MOVE MES            TO MOV-MES.
-           MOVE DIA            TO MOV-DIA.
-           MOVE HORAS          TO MOV-HOR.
-           MOVE MINUTOS        TO MOV-MIN.
-           MOVE SEGUNDOS       TO MOV-SEG.
+           MOVE 0 TO LAST-TRF-ID.
+           MOVE 0 TO TRF-ID.
+           START F-TRANSFERENCIAS KEY >= TRF-ID
+               INVALID KEY GO TO FIN-LECTURA-TRF.
+       LECTURA-TRF.
+           READ F-TRANSFERENCIAS NEXT RECORD AT END 
+               GO TO FIN-LECTURA-TRF.
+           IF TRF-ID > LAST-TRF-ID THEN
+               MOVE TRF-ID TO LAST-TRF-ID
+           END-IF.
+           GO TO LECTURA-TRF.
 
-           MULTIPLY -1 BY EURENT-USUARIO.
-           MOVE EURENT-USUARIO TO MOV-IMPORTE-ENT.
-           MULTIPLY -1 BY EURENT-USUARIO.
-           MOVE EURDEC-USUARIO TO MOV-IMPORTE-DEC.
+       FIN-LECTURA-TRF.
+           ADD 1 TO LAST-TRF-ID.
+           MOVE LAST-TRF-ID TO TRF-ID.
+           MOVE TNUM TO TRF-ORIGEN.
+           MOVE CUENTA-DESTINO TO TRF-DESTINO.
+           MOVE EURENT-USUARIO TO TRF-IMPORTE-ENT.
+           MOVE EURDEC-USUARIO TO TRF-IMPORTE-DEC.
+           
+           IF TIPO-TRF = "p" THEN
+               MOVE "P" TO TRF-TIPO
+           ELSE
+               IF TIPO-TRF = "m" THEN
+                   MOVE "M" TO TRF-TIPO
+               ELSE
+                   MOVE TIPO-TRF TO TRF-TIPO
+               END-IF
+           END-IF.
 
-           MOVE MSJ-ORD        TO MOV-CONCEPTO.
+           MOVE TRF-FECHA-NUM TO TRF-FECHA.
+           MOVE "P" TO TRF-ESTADO.
 
-           SUBTRACT CENT-IMPOR-USER FROM CENT-SALDO-ORD-USER.
-
-           COMPUTE MOV-SALDOPOS-ENT = (CENT-SALDO-ORD-USER / 100).
-           MOVE FUNCTION MOD(CENT-SALDO-ORD-USER, 100)
-               TO MOV-SALDOPOS-DEC.
-
-           WRITE MOVIMIENTO-REG INVALID KEY GO TO PSYS-ERR.
-
-           ADD 1 TO LAST-MOV-NUM.
-
-           MOVE LAST-MOV-NUM   TO MOV-NUM.
-           MOVE CUENTA-DESTINO TO MOV-TARJETA.
-           MOVE ANO            TO MOV-ANO.
-           MOVE MES            TO MOV-MES.
-           MOVE DIA            TO MOV-DIA.
-           MOVE HORAS          TO MOV-HOR.
-           MOVE MINUTOS        TO MOV-MIN.
-           MOVE SEGUNDOS       TO MOV-SEG.
-
-           MOVE EURENT-USUARIO TO MOV-IMPORTE-ENT.
-           MOVE EURDEC-USUARIO TO MOV-IMPORTE-DEC.
-
-           MOVE MSJ-DST        TO MOV-CONCEPTO.
-
-           ADD CENT-IMPOR-USER TO CENT-SALDO-DST-USER.
-           COMPUTE MOV-SALDOPOS-ENT = (CENT-SALDO-DST-USER / 100).
-           MOVE FUNCTION MOD(CENT-SALDO-DST-USER, 100)
-               TO MOV-SALDOPOS-DEC.
-
-           WRITE MOVIMIENTO-REG INVALID KEY GO TO PSYS-ERR.
-
-           CLOSE F-MOVIMIENTOS.
+           WRITE TRF-REG INVALID KEY GO TO PSYS-ERR.
+           CLOSE F-TRANSFERENCIAS.
 
        P-EXITO.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
-
            DISPLAY (8, 30) "Ordenar transferencia".
-           DISPLAY (11, 19) "Transferencia realizada correctamente!".
+           DISPLAY (11, 14) "Transferencia programada con exito!".
+           DISPLAY (13, 20) "Queda pendiente de ejecucion.".
            DISPLAY (24, 33) "Enter - Aceptar".
 
            GO TO EXIT-ENTER.
 
        PSYS-ERR.
            CLOSE TARJETAS.
-           CLOSE F-MOVIMIENTOS.
+           IF FS-TRF = "00" CLOSE F-TRANSFERENCIAS END-IF.
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (09, 25) "Ha ocurrido un error interno"
