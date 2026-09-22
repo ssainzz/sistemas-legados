@@ -412,20 +412,24 @@
            START F-TRANSFERENCIAS KEY >= TRF-ID
                INVALID KEY GO TO FIN-BUSCAR-MAX-TRF.
        BUSCAR-MAX-TRF.
-           READ F-TRANSFERENCIAS NEXT RECORD AT END
-               GO TO FIN-BUSCAR-MAX-TRF.
+           READ F-TRANSFERENCIAS NEXT RECORD
+               AT END GO TO FIN-BUSCAR-MAX-TRF
+           END-READ.
            IF TRF-ID > MAX-TRF-ID
-               MOVE TRF-ID TO MAX-TRF-ID.
+               MOVE TRF-ID TO MAX-TRF-ID
+           END-IF.
            GO TO BUSCAR-MAX-TRF.
        FIN-BUSCAR-MAX-TRF.
 
            *> 2. Bucle para buscar pendientes ('P') listas para ejecutar
            MOVE 0 TO TRF-ID.
            START F-TRANSFERENCIAS KEY >= TRF-ID
-               INVALID KEY GO TO FIN-BUCLE-TRF.
+               INVALID KEY GO TO FIN-BUCLE-TRF
+           END-START.
        BUCLE-TRF.
-           READ F-TRANSFERENCIAS NEXT RECORD AT END
-               GO TO FIN-BUCLE-TRF.
+           READ F-TRANSFERENCIAS NEXT RECORD
+               AT END GO TO FIN-BUCLE-TRF
+           END-READ.
            MOVE TRF-ID TO CURRENT-TRF-ID.
 
            IF TRF-ESTADO = "P" AND TRF-FECHA <= HOY-NUM
@@ -445,47 +449,66 @@
            EXIT.
 
        EJECUTAR-TRF.
-           *> Extraer ultimo movimiento de origen y destino
+           *> Extraer ultimo movimiento de origen y destino,
+           *> capturando tambien sus saldos en el mismo barrido
            MOVE 0 TO MAX-MOV-NUM.
            MOVE 0 TO LAST-ORIGEN-MOV-NUM.
            MOVE 0 TO LAST-DESTINO-MOV-NUM.
+           MOVE 0 TO SALDO-ORIGEN-ENT.
+           MOVE 0 TO SALDO-ORIGEN-DEC.
+           MOVE 0 TO SALDO-DESTINO-ENT.
+           MOVE 0 TO SALDO-DESTINO-DEC.
            MOVE 0 TO MOV-NUM.
            START F-MOVIMIENTOS KEY >= MOV-NUM
-               INVALID KEY GO TO FIN-BUSQUEDA-MOV.
+               INVALID KEY GO TO FIN-BUSQUEDA-MOV
+           END-START.
        BUSQUEDA-MOV.
-           READ F-MOVIMIENTOS NEXT RECORD AT END
-               GO TO FIN-BUSQUEDA-MOV.
+           READ F-MOVIMIENTOS NEXT RECORD
+               AT END GO TO FIN-BUSQUEDA-MOV
+           END-READ.
            IF MOV-NUM > MAX-MOV-NUM
-               MOVE MOV-NUM TO MAX-MOV-NUM.
+               MOVE MOV-NUM TO MAX-MOV-NUM
+           END-IF.
            IF MOV-TARJETA = TRF-ORIGEN
                IF MOV-NUM > LAST-ORIGEN-MOV-NUM
-                   MOVE MOV-NUM TO LAST-ORIGEN-MOV-NUM.
+                   MOVE MOV-NUM TO LAST-ORIGEN-MOV-NUM
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-ORIGEN-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-ORIGEN-DEC
+               END-IF
+           END-IF.
            IF MOV-TARJETA = TRF-DESTINO
                IF MOV-NUM > LAST-DESTINO-MOV-NUM
-                   MOVE MOV-NUM TO LAST-DESTINO-MOV-NUM.
+                   MOVE MOV-NUM TO LAST-DESTINO-MOV-NUM
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-DESTINO-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-DESTINO-DEC
+               END-IF
+           END-IF.
            GO TO BUSQUEDA-MOV.
        FIN-BUSQUEDA-MOV.
 
-           *> Obtener y validar saldo origen
-           MOVE 0 TO SALDO-ORIGEN-ENT.
-           MOVE 0 TO SALDO-ORIGEN-DEC.
-           IF LAST-ORIGEN-MOV-NUM > 0
-               MOVE LAST-ORIGEN-MOV-NUM TO MOV-NUM
-               READ F-MOVIMIENTOS INVALID KEY CONTINUE
-               NOT INVALID KEY
-                   MOVE MOV-SALDOPOS-ENT TO SALDO-ORIGEN-ENT
-                   MOVE MOV-SALDOPOS-DEC TO SALDO-ORIGEN-DEC
+           COMPUTE CENT-SALDO = (SALDO-ORIGEN-ENT * 100) +
+                                 SALDO-ORIGEN-DEC.
+           COMPUTE CENT-TRF = (TRF-IMPORTE-ENT * 100) +
+                               TRF-IMPORTE-DEC.
+
+           *> Origen en números negativos (no debería pasar): 
+           *> marcar como Fallida
+           IF SALDO-ORIGEN-ENT < 0
+               MOVE CURRENT-TRF-ID TO TRF-ID
+               READ F-TRANSFERENCIAS
+                   INVALID KEY CONTINUE
+               END-READ
+               MOVE "F" TO TRF-ESTADO
+               REWRITE TRF-REG
+               GO TO FIN-EJECUTAR-TRF
            END-IF.
 
-           COMPUTE CENT-SALDO = (SALDO-ORIGEN-ENT * 100) + 
-                                 SALDO-ORIGEN-DEC.
-           COMPUTE CENT-TRF = (TRF-IMPORTE-ENT * 100) + 
-                               TRF-IMPORTE-DEC.
-                               
+           *> Saldo insuficiente: marcar como Fallida
            IF CENT-SALDO < CENT-TRF
-               *> Sin saldo: Se marca como Fallida
                MOVE CURRENT-TRF-ID TO TRF-ID
-               READ F-TRANSFERENCIAS INVALID KEY CONTINUE
+               READ F-TRANSFERENCIAS
+                   INVALID KEY CONTINUE
+               END-READ
                MOVE "F" TO TRF-ESTADO
                REWRITE TRF-REG
                GO TO FIN-EJECUTAR-TRF
@@ -496,7 +519,7 @@
            MOVE MAX-MOV-NUM TO MOV-NUM.
            MOVE TRF-ORIGEN TO MOV-TARJETA.
            MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
-           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN. 
+           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
            MOVE SEGUNDOS TO MOV-SEG.
            COMPUTE MOV-IMPORTE-ENT = TRF-IMPORTE-ENT * -1.
            MOVE TRF-IMPORTE-DEC TO MOV-IMPORTE-DEC.
@@ -504,27 +527,19 @@
            COMPUTE CENT-NUEVO-SALDO = CENT-SALDO - CENT-TRF.
            DIVIDE CENT-NUEVO-SALDO BY 100 GIVING MOV-SALDOPOS-ENT
                REMAINDER MOV-SALDOPOS-DEC.
-           WRITE MOVIMIENTO-REG.
+           WRITE MOVIMIENTO-REG
+               INVALID KEY GO TO FIN-EJECUTAR-TRF
+           END-WRITE.
 
            *> Realizar el Abono al Destino
-           MOVE 0 TO SALDO-DESTINO-ENT.
-           MOVE 0 TO SALDO-DESTINO-DEC.
-           IF LAST-DESTINO-MOV-NUM > 0
-               MOVE LAST-DESTINO-MOV-NUM TO MOV-NUM
-               READ F-MOVIMIENTOS INVALID KEY CONTINUE
-               NOT INVALID KEY
-                   MOVE MOV-SALDOPOS-ENT TO SALDO-DESTINO-ENT
-                   MOVE MOV-SALDOPOS-DEC TO SALDO-DESTINO-DEC
-           END-IF.
-
-           COMPUTE CENT-SALDO-DST = (SALDO-DESTINO-ENT * 100) + 
+           COMPUTE CENT-SALDO-DST = (SALDO-DESTINO-ENT * 100) +
                                      SALDO-DESTINO-DEC.
            COMPUTE CENT-NUEVO-SALDO-DST = CENT-SALDO-DST + CENT-TRF.
            ADD 1 TO MAX-MOV-NUM.
            MOVE MAX-MOV-NUM TO MOV-NUM.
            MOVE TRF-DESTINO TO MOV-TARJETA.
            MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
-           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN. 
+           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
            MOVE SEGUNDOS TO MOV-SEG.
            MOVE TRF-IMPORTE-ENT TO MOV-IMPORTE-ENT.
            MOVE TRF-IMPORTE-DEC TO MOV-IMPORTE-DEC.
@@ -535,13 +550,15 @@
 
            *> Actualizar el estado de la transferencia
            MOVE CURRENT-TRF-ID TO TRF-ID.
-           READ F-TRANSFERENCIAS INVALID KEY CONTINUE.
+           READ F-TRANSFERENCIAS
+               INVALID KEY CONTINUE
+           END-READ.
            MOVE "E" TO TRF-ESTADO.
            REWRITE TRF-REG.
 
            *> Reprogramar si es periodica mensual
            IF TRF-TIPO = "M" OR TRF-TIPO = "m"
-               PERFORM PROGRAMAR-SIGUIENTE-TRF 
+               PERFORM PROGRAMAR-SIGUIENTE-TRF
                    THRU FIN-PROGRAMAR-SIGUIENTE
            END-IF.
        FIN-EJECUTAR-TRF.
