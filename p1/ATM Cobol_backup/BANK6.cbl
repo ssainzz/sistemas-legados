@@ -639,10 +639,10 @@
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (09, 25) "Ha ocurrido un error interno"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (11, 32) "Vuelva mas tarde"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (24, 33) "Enter - Aceptar".
 
