@@ -90,7 +90,7 @@
        PEDIR-FECHAS.
            DISPLAY BLANK-SCREEN.
            DISPLAY (2, 26) "Cajero Automatico UnizarBank" 
-               WITH FOREGROUND-COLOR 1.
+               WITH FOREGROUND-COLOR 1 HIGHLIGHT.
            DISPLAY (8, 25) "Listado de Transferencias".
            
            INITIALIZE FECHAS-FILTRO.
@@ -117,7 +117,7 @@
        MOSTRAR-CABECERA-LISTA.
            DISPLAY BLANK-SCREEN.
            DISPLAY (2, 26) "Cajero Automatico UnizarBank" 
-               WITH FOREGROUND-COLOR 1.
+               WITH FOREGROUND-COLOR 1 HIGHLIGHT.
            DISPLAY (6, 5) 
              "FECHA      TIPO      IMPORTE      CONCEPTO".
            DISPLAY (7, 5) 
