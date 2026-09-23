@@ -130,6 +130,21 @@
        77 AUX-MES                  PIC  9(2).
        77 AUX-ANO                  PIC  9(4).
 
+       *> Variables auxiliares para la ejecucion inmediata de 
+       *> transferencias
+       77 MAX-MOV-NUM              PIC  9(35).
+       77 LAST-ORIGEN-MOV-NUM      PIC  9(35).
+       77 LAST-DESTINO-MOV-NUM     PIC  9(35).
+       77 SALDO-ORIGEN-ENT         PIC S9(9).
+       77 SALDO-ORIGEN-DEC         PIC  9(2).
+       77 SALDO-DESTINO-ENT        PIC S9(9).
+       77 SALDO-DESTINO-DEC        PIC  9(2).
+       77 CENT-SALDO               PIC S9(11).
+       77 CENT-SALDO-DST           PIC S9(11).
+       77 CENT-TRF                 PIC S9(11).
+       77 CENT-NUEVO-SALDO         PIC S9(11).
+       77 CENT-NUEVO-SALDO-DST     PIC S9(11).
+
        LINKAGE SECTION.
        77 TNUM                     PIC  9(16).
 
@@ -155,8 +170,8 @@
 
        01 PANTALLA-TIPO-TRF.
            05 FILLER LINE 18 COL 19
-              VALUE "Tipo (P=Puntual / M=Mensual): ".
-           05 TIPO-ACC UNDERLINE LINE 18 COL 49
+              VALUE "Tipo (I=Inmediata / P=Puntual / M=Mensual): ".
+           05 TIPO-ACC UNDERLINE LINE 18 COL 63
               PIC X USING TIPO-TRF.
 
        01 PANTALLA-FECHA-PUNTUAL.
@@ -287,7 +302,7 @@
            END-IF.
 
            DISPLAY (20, 19)
-               "                                        "
+               "                                                "
                WITH BACKGROUND-COLOR BLACK.
 
        PEDIR-TIPO-TRF.
@@ -305,10 +320,11 @@
                EXIT PROGRAM
            END-IF.
 
-           IF TIPO-TRF NOT = "P" AND TIPO-TRF NOT = "p" AND
+           IF TIPO-TRF NOT = "I" AND TIPO-TRF NOT = "i" AND
+              TIPO-TRF NOT = "P" AND TIPO-TRF NOT = "p" AND
               TIPO-TRF NOT = "M" AND TIPO-TRF NOT = "m" THEN
                DISPLAY (20, 19)
-                   "Error: Indique P o M"
+                   "Error: Indique I, P o M"
                    WITH BACKGROUND-COLOR RED
                GO TO PEDIR-TIPO-TRF
            END-IF.
@@ -316,6 +332,23 @@
            DISPLAY (20, 19)
                "                                                "
                WITH BACKGROUND-COLOR BLACK.
+
+           *> Comprobacion de saldo suficiente para transferencia 
+           *> Inmediata
+           IF TIPO-TRF = "I" OR TIPO-TRF = "i" THEN
+               COMPUTE CENT-SALDO-ORD-USER = (SALDO-USER-ENT * 100)
+                                             + SALDO-USER-DEC
+               IF CENT-SALDO-ORD-USER < CENT-IMPOR-USER THEN
+                   DISPLAY (20, 19)
+                       "Indique una cantidad menor!!"
+                       WITH BACKGROUND-COLOR RED
+                   GO TO INDICAR-CTA-DST
+               END-IF
+               MOVE DIA TO TRF-DIA
+               MOVE MES TO TRF-MES
+               MOVE ANO TO TRF-ANO
+               GO TO FIN-PEDIR-FECHA
+           END-IF.
 
            IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
                GO TO PEDIR-FECHA-PUNTUAL
@@ -402,21 +435,26 @@
        GUARDAR-TRF.
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
 
-           IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
-               COMPUTE TRF-FECHA-NUM = (TRF-ANO * 10000) +
-                                       (TRF-MES * 100) + TRF-DIA
+           IF TIPO-TRF = "I" OR TIPO-TRF = "i" THEN
+               COMPUTE TRF-FECHA-NUM = (ANO * 10000) +
+                                       (MES * 100) + DIA
            ELSE
-               MOVE MES TO AUX-MES
-               MOVE ANO TO AUX-ANO
-               IF TRF-DIA < DIA THEN
-                   ADD 1 TO AUX-MES
-                   IF AUX-MES > 12 THEN
-                       MOVE 1 TO AUX-MES
-                       ADD 1 TO AUX-ANO
+               IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
+                   COMPUTE TRF-FECHA-NUM = (TRF-ANO * 10000) +
+                                           (TRF-MES * 100) + TRF-DIA
+               ELSE
+                   MOVE MES TO AUX-MES
+                   MOVE ANO TO AUX-ANO
+                   IF TRF-DIA < DIA THEN
+                       ADD 1 TO AUX-MES
+                       IF AUX-MES > 12 THEN
+                           MOVE 1 TO AUX-MES
+                           ADD 1 TO AUX-ANO
+                       END-IF
                    END-IF
+                   COMPUTE TRF-FECHA-NUM = (AUX-ANO * 10000) +
+                                           (AUX-MES * 100) + TRF-DIA
                END-IF
-               COMPUTE TRF-FECHA-NUM = (AUX-ANO * 10000) +
-                                       (AUX-MES * 100) + TRF-DIA
            END-IF.
 
            OPEN I-O F-TRANSFERENCIAS.
@@ -449,21 +487,44 @@
            MOVE EURENT-USUARIO TO TRF-IMPORTE-ENT.
            MOVE EURDEC-USUARIO TO TRF-IMPORTE-DEC.
            
-           IF TIPO-TRF = "p" THEN
-               MOVE "P" TO TRF-TIPO
+           IF TIPO-TRF = "I" OR TIPO-TRF = "i" THEN
+               MOVE "I" TO TRF-TIPO
+               MOVE "E" TO TRF-ESTADO
            ELSE
-               IF TIPO-TRF = "m" THEN
-                   MOVE "M" TO TRF-TIPO
+               IF TIPO-TRF = "p" THEN
+                   MOVE "P" TO TRF-TIPO
+                   MOVE "P" TO TRF-ESTADO
                ELSE
-                   MOVE TIPO-TRF TO TRF-TIPO
+                   IF TIPO-TRF = "m" THEN
+                       MOVE "M" TO TRF-TIPO
+                       MOVE "P" TO TRF-ESTADO
+                   ELSE
+                       MOVE TIPO-TRF TO TRF-TIPO
+                       MOVE "P" TO TRF-ESTADO
+                   END-IF
                END-IF
            END-IF.
 
            MOVE TRF-FECHA-NUM TO TRF-FECHA.
-           MOVE "P" TO TRF-ESTADO.
 
            WRITE TRF-REG INVALID KEY GO TO PSYS-ERR.
            CLOSE F-TRANSFERENCIAS.
+
+           IF TRF-TIPO = "I" THEN
+               PERFORM EJECUTAR-TRF-INMEDIATA
+                   THRU FIN-EJECUTAR-TRF-INMEDIATA
+               GO TO I-EXITO
+           ELSE
+               GO TO P-EXITO
+           END-IF.
+
+       I-EXITO.
+           PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
+           DISPLAY (8, 30) "Ordenar Transferencia".
+           DISPLAY (11, 23) "Transferencia realizada con exito!".
+           DISPLAY (24, 33) "Enter - Aceptar".
+
+           GO TO EXIT-ENTER.
 
        P-EXITO.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
@@ -473,6 +534,99 @@
            DISPLAY (24, 33) "Enter - Aceptar".
 
            GO TO EXIT-ENTER.
+
+       *> Rutina para la ejecucion inmediata en movimientos.ubd
+       EJECUTAR-TRF-INMEDIATA.
+           OPEN I-O F-MOVIMIENTOS.
+           IF FSM = "35" THEN
+               OPEN OUTPUT F-MOVIMIENTOS
+               CLOSE F-MOVIMIENTOS
+               OPEN I-O F-MOVIMIENTOS
+           END-IF.
+           IF FSM NOT = "00" THEN
+               GO TO PSYS-ERR
+           END-IF.
+
+           MOVE 0 TO MAX-MOV-NUM.
+           MOVE 0 TO LAST-ORIGEN-MOV-NUM.
+           MOVE 0 TO LAST-DESTINO-MOV-NUM.
+           MOVE 0 TO SALDO-ORIGEN-ENT.
+           MOVE 0 TO SALDO-ORIGEN-DEC.
+           MOVE 0 TO SALDO-DESTINO-ENT.
+           MOVE 0 TO SALDO-DESTINO-DEC.
+           MOVE 0 TO MOV-NUM.
+           START F-MOVIMIENTOS KEY >= MOV-NUM
+               INVALID KEY GO TO FIN-BUSQUEDA-MOV
+           END-START.
+
+       BUSQUEDA-MOV.
+           READ F-MOVIMIENTOS NEXT RECORD
+               AT END GO TO FIN-BUSQUEDA-MOV
+           END-READ.
+           IF MOV-NUM > MAX-MOV-NUM THEN
+               MOVE MOV-NUM TO MAX-MOV-NUM
+           END-IF.
+           IF MOV-TARJETA = TNUM THEN
+               IF MOV-NUM > LAST-ORIGEN-MOV-NUM THEN
+                   MOVE MOV-NUM TO LAST-ORIGEN-MOV-NUM
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-ORIGEN-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-ORIGEN-DEC
+               END-IF
+           END-IF.
+           IF MOV-TARJETA = CUENTA-DESTINO THEN
+               IF MOV-NUM > LAST-DESTINO-MOV-NUM THEN
+                   MOVE MOV-NUM TO LAST-DESTINO-MOV-NUM
+                   MOVE MOV-SALDOPOS-ENT TO SALDO-DESTINO-ENT
+                   MOVE MOV-SALDOPOS-DEC TO SALDO-DESTINO-DEC
+               END-IF
+           END-IF.
+           GO TO BUSQUEDA-MOV.
+
+       FIN-BUSQUEDA-MOV.
+           COMPUTE CENT-SALDO = (SALDO-ORIGEN-ENT * 100) +
+                                 SALDO-ORIGEN-DEC.
+           COMPUTE CENT-TRF = (EURENT-USUARIO * 100) +
+                               EURDEC-USUARIO.
+
+           *> Realizar el Cargo al Origen
+           ADD 1 TO MAX-MOV-NUM.
+           MOVE MAX-MOV-NUM TO MOV-NUM.
+           MOVE TNUM TO MOV-TARJETA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
+           MOVE SEGUNDOS TO MOV-SEG.
+           COMPUTE MOV-IMPORTE-ENT = EURENT-USUARIO * -1.
+           MOVE EURDEC-USUARIO TO MOV-IMPORTE-DEC.
+           MOVE "Transferencia enviada" TO MOV-CONCEPTO.
+           COMPUTE CENT-NUEVO-SALDO = CENT-SALDO - CENT-TRF.
+           DIVIDE CENT-NUEVO-SALDO BY 100 GIVING MOV-SALDOPOS-ENT
+               REMAINDER MOV-SALDOPOS-DEC.
+           WRITE MOVIMIENTO-REG
+               INVALID KEY GO TO PSYS-ERR
+           END-WRITE.
+
+           *> Realizar el Abono al Destino
+           COMPUTE CENT-SALDO-DST = (SALDO-DESTINO-ENT * 100) +
+                                     SALDO-DESTINO-DEC.
+           COMPUTE CENT-NUEVO-SALDO-DST = CENT-SALDO-DST + CENT-TRF.
+           ADD 1 TO MAX-MOV-NUM.
+           MOVE MAX-MOV-NUM TO MOV-NUM.
+           MOVE CUENTA-DESTINO TO MOV-TARJETA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
+           MOVE SEGUNDOS TO MOV-SEG.
+           MOVE EURENT-USUARIO TO MOV-IMPORTE-ENT.
+           MOVE EURDEC-USUARIO TO MOV-IMPORTE-DEC.
+           MOVE "Transferencia recibida" TO MOV-CONCEPTO.
+           DIVIDE CENT-NUEVO-SALDO-DST BY 100 GIVING MOV-SALDOPOS-ENT
+               REMAINDER MOV-SALDOPOS-DEC.
+           WRITE MOVIMIENTO-REG
+               INVALID KEY GO TO PSYS-ERR
+           END-WRITE.
+
+           CLOSE F-MOVIMIENTOS.
+       FIN-EJECUTAR-TRF-INMEDIATA.
+           EXIT.
 
        PSYS-ERR.
            CLOSE TARJETAS.
