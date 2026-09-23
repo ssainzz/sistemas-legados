@@ -399,7 +399,11 @@
        REALIZAR-TRF-VERIFICACION.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (08, 30) "Ordenar Transferencia".
-           DISPLAY (11, 23) "Va a programar una transferencia de:".
+           IF TIPO-TRF = "I" OR TIPO-TRF = "i" THEN
+               DISPLAY (11, 33) "Va a transferir:"
+           ELSE
+               DISPLAY (11, 23) "Va a programar una transferencia de:"
+           END-IF.
            DISPLAY (12, 27) EURENT-USUARIO.
            DISPLAY (12, 34) ".".
            DISPLAY (12, 35) EURDEC-USUARIO.
