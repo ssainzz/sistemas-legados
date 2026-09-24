@@ -267,7 +267,7 @@
                OPEN I-O F-MOVIMIENTOS
            END-IF.
            IF FSM NOT = 00
-               GO TO PSYS-ERR.                                                                                            GO TO PSYS-ERR.
+               GO TO PSYS-ERR.
 
            MOVE 0 TO LAST-USER-MOV-NUM.
            MOVE 0 TO LAST-MOV-NUM.
@@ -504,11 +504,11 @@
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (06, 22) "Compra de entradas de espectaculos".
            DISPLAY (08, 27) "Lamentamos comunicarle que"
-               WITH BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (9, 9) "El espectaculo seleccionado no"
-               WITH BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (9, 40) "dispone de suficientes entradas"
-               WITH BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (24, 33) "Enter - Aceptar".
 
            GO TO VENTA-ERR-ENTER.
@@ -517,9 +517,9 @@
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (6, 22) "Compra de entradas de espectaculos".
            DISPLAY (8, 27) "Lamentamos comunicarle que"
-               WITH BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (9, 28) "su saldo es insuficiente"
-               WITH BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (24, 33) "Enter - Aceptar".
 
        VENTA-ERR-ENTER.

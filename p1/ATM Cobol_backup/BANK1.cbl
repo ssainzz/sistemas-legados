@@ -320,14 +320,14 @@
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (9, 20) "Se ha sobrepasado el numero de intentos"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (11, 18) 
                "Por su seguridad se ha bloqueado la tarjeta"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (12, 30) "Acuda a una sucursal"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (24, 33) "Enter - Aceptar".
 
@@ -348,17 +348,17 @@
 
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (9, 26) "El codigo PIN es incorrecto"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (11, 30) "Le quedan "
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (11, 40) IINTENTOS
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (11, 42) " intentos"
 
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
 
            DISPLAY (24, 1) "Enter - Aceptar".
@@ -491,34 +491,18 @@
            COMPUTE CENT-TRF = (TRF-IMPORTE-ENT * 100) +
                                TRF-IMPORTE-DEC.
 
-           *> Origen en números negativos (no debería pasar): 
-           *> marcar como Fallida
-           IF SALDO-ORIGEN-ENT < 0
-               MOVE CURRENT-TRF-ID TO TRF-ID
-               READ F-TRANSFERENCIAS
-                   INVALID KEY CONTINUE
-               END-READ
-               MOVE "F" TO TRF-ESTADO
-               REWRITE TRF-REG
-               GO TO FIN-EJECUTAR-TRF
-           END-IF.
-
-           *> Saldo insuficiente: marcar como Fallida
-           IF CENT-SALDO < CENT-TRF
-               MOVE CURRENT-TRF-ID TO TRF-ID
-               READ F-TRANSFERENCIAS
-                   INVALID KEY CONTINUE
-               END-READ
-               MOVE "F" TO TRF-ESTADO
-               REWRITE TRF-REG
-               GO TO FIN-EJECUTAR-TRF
+           *> Origen en negativo o saldo insuficiente:
+           *> se marca como Fallida (si es mensual se reprograma)
+           IF SALDO-ORIGEN-ENT < 0 OR CENT-SALDO < CENT-TRF
+               GO TO MARCAR-FALLIDA
            END-IF.
 
            *> Realizar el Cargo al Origen
            ADD 1 TO MAX-MOV-NUM.
            MOVE MAX-MOV-NUM TO MOV-NUM.
            MOVE TRF-ORIGEN TO MOV-TARJETA.
-           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES.
+           MOVE DIA TO MOV-DIA.
            MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
            MOVE SEGUNDOS TO MOV-SEG.
            COMPUTE MOV-IMPORTE-ENT = TRF-IMPORTE-ENT * -1.
@@ -528,7 +512,7 @@
            DIVIDE CENT-NUEVO-SALDO BY 100 GIVING MOV-SALDOPOS-ENT
                REMAINDER MOV-SALDOPOS-DEC.
            WRITE MOVIMIENTO-REG
-               INVALID KEY GO TO FIN-EJECUTAR-TRF
+               INVALID KEY GO TO MARCAR-FALLIDA
            END-WRITE.
 
            *> Realizar el Abono al Destino
@@ -538,7 +522,8 @@
            ADD 1 TO MAX-MOV-NUM.
            MOVE MAX-MOV-NUM TO MOV-NUM.
            MOVE TRF-DESTINO TO MOV-TARJETA.
-           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES.
+           MOVE DIA TO MOV-DIA.
            MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
            MOVE SEGUNDOS TO MOV-SEG.
            MOVE TRF-IMPORTE-ENT TO MOV-IMPORTE-ENT.
@@ -557,6 +542,21 @@
            REWRITE TRF-REG.
 
            *> Reprogramar si es periodica mensual
+           IF TRF-TIPO = "M" OR TRF-TIPO = "m"
+               PERFORM PROGRAMAR-SIGUIENTE-TRF
+                   THRU FIN-PROGRAMAR-SIGUIENTE
+           END-IF.
+           GO TO FIN-EJECUTAR-TRF.
+
+       MARCAR-FALLIDA.
+           *> La transferencia no se ha podido realizar: estado F.
+           *> Una mensual sigue programada para el mes siguiente.
+           MOVE CURRENT-TRF-ID TO TRF-ID.
+           READ F-TRANSFERENCIAS
+               INVALID KEY GO TO FIN-EJECUTAR-TRF
+           END-READ.
+           MOVE "F" TO TRF-ESTADO.
+           REWRITE TRF-REG.
            IF TRF-TIPO = "M" OR TRF-TIPO = "m"
                PERFORM PROGRAMAR-SIGUIENTE-TRF
                    THRU FIN-PROGRAMAR-SIGUIENTE

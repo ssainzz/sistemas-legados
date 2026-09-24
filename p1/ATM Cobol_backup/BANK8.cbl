@@ -201,19 +201,19 @@
        MOSTRAR-ERROR-COINCIDENCIA.
            PERFORM IMPRIMIR-CABECERA.
            DISPLAY (10, 20) "Las nuevas claves no coinciden"
-               WITH FOREGROUND-COLOR BLACK BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (24, 33) "Enter - Aceptar".
            PERFORM ESPERAR-ENTER.
 
        MOSTRAR-BLOQUEO.
            PERFORM IMPRIMIR-CABECERA.
            DISPLAY (9, 20) "Se ha sobrepasado el numero de intentos"
-               WITH FOREGROUND-COLOR BLACK BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (11, 18) 
                "Por su seguridad se ha bloqueado la tarjeta"
-               WITH FOREGROUND-COLOR BLACK BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (12, 30) "Acuda a una sucursal"
-               WITH FOREGROUND-COLOR BLACK BACKGROUND-COLOR RED.
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            DISPLAY (24, 33) "Enter - Aceptar".
            PERFORM ESPERAR-ENTER.
 
@@ -249,4 +249,4 @@
        REINICIAR-INTENTOS.
            MOVE 3 TO IINTENTOS.
            REWRITE INTENTOSREG.
-           
+           

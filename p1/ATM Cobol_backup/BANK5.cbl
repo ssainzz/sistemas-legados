@@ -222,7 +222,8 @@
            INITIALIZE EURENT-USUARIO.
            INITIALIZE EURDEC-USUARIO.
 
-           DISPLAY(24, 33) "ESC - Cancelar".
+           DISPLAY(24, 1) "Enter - Aceptar".
+           DISPLAY(24, 66) "ESC - Cancelar".
            DISPLAY(8, 30) "Ingresar efectivo".
            DISPLAY(10, 19) "Saldo Actual: ".
            DISPLAY SALDO-DISPLAY.
@@ -242,7 +243,7 @@
               NUM-BILLETES-20 = 0 AND
               NUM-BILLETES-50 = 0
                DISPLAY(20, 19) "Debe introducir al menos un billete"
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PANTALLA-INGRESO-INICIO
            END-IF.
 

@@ -236,13 +236,13 @@
 
             IF CENT-IMPOR-USER = 0 THEN
                 DISPLAY(15, 19) "La cantidad debe ser mayor a 0!!"
-                    WITH BACKGROUND-COLOR RED
+                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                 GO TO PANTALLA-RETIRADA-INICIO
             END-IF.
 
            IF CENT-IMPOR-USER > CENT-SALDO-USER THEN
                DISPLAY(15, 19) "Indique una cantidad menor!!"
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PANTALLA-RETIRADA-INICIO
            END-IF.
 

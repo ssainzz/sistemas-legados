@@ -160,7 +160,7 @@
            05 EUR-ENT-TRF BLANK WHEN ZERO AUTO UNDERLINE
                LINE 16 COL 54 PIC 9(7) USING EURENT-USUARIO.
            05 FILLER BLANK WHEN ZERO UNDERLINE
-               LINE 16 COL 63 PIC 9(2) USING EURDEC-USUARIO.
+               LINE 16 COL 62 PIC 9(2) USING EURDEC-USUARIO.
 
        01 SALDO-DISPLAY.
            05 FILLER LINE 10 COL 33 PIC 9(7) FROM MOV-SALDOPOS-ENT.
@@ -270,7 +270,7 @@
            DISPLAY (14, 19) "y nombre del titular".
            DISPLAY (16, 19) "Indique la cantidad a transferir".
            DISPLAY (16, 61) ",".
-           DISPLAY (16, 66) "EUR".
+           DISPLAY (16, 65) "EUR".
 
            ACCEPT FILTRO-CUENTA.
            IF ESC-PRESSED THEN
@@ -280,14 +280,14 @@
            IF CUENTA-DESTINO = 0 THEN
                DISPLAY (20, 19)
                    "Error: Cuenta invalida o vacia!!"
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
            IF CUENTA-DESTINO = TNUM THEN
                DISPLAY (20, 19)
                    "Error: No puedes transferirte a ti mismo"
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
@@ -297,7 +297,7 @@
            IF CENT-IMPOR-USER <= 0 THEN
                DISPLAY (20, 19)
                    "Error: Cantidad invalida"
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
@@ -325,7 +325,7 @@
               TIPO-TRF NOT = "M" AND TIPO-TRF NOT = "m" THEN
                DISPLAY (20, 19)
                    "Error: Indique I, P o M"
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PEDIR-TIPO-TRF
            END-IF.
 
@@ -341,7 +341,7 @@
                IF CENT-SALDO-ORD-USER < CENT-IMPOR-USER THEN
                    DISPLAY (20, 19)
                        "Indique una cantidad menor!!"
-                       WITH BACKGROUND-COLOR RED
+                       WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                    GO TO INDICAR-CTA-DST
                END-IF
                MOVE DIA TO TRF-DIA
@@ -363,17 +363,33 @@
            END-IF.
 
            IF TRF-DIA NOT NUMERIC OR TRF-MES NOT NUMERIC OR
-              TRF-ANO NOT NUMERIC OR
-              TRF-DIA < 1 OR TRF-DIA > 31 OR
-              TRF-MES < 1 OR TRF-MES > 12 OR
-              TRF-ANO < 2024 THEN
+              TRF-ANO NOT NUMERIC THEN
+               GO TO FECHA-PUNTUAL-INVALIDA
+           END-IF.
+
+           *> La fecha debe existir en el calendario (31/02 no vale)
+           COMPUTE TRF-FECHA-NUM = (TRF-ANO * 10000) +
+                                   (TRF-MES * 100) + TRF-DIA.
+           IF FUNCTION TEST-DATE-YYYYMMDD(TRF-FECHA-NUM) NOT = 0 THEN
+               GO TO FECHA-PUNTUAL-INVALIDA
+           END-IF.
+
+           *> Y no puede ser anterior a hoy
+           MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
+           IF TRF-FECHA-NUM < (ANO * 10000) + (MES * 100) + DIA THEN
                DISPLAY (20, 19)
-                   "Error: Fecha invalida (Use 4 cifras para ano)   "
-                   WITH BACKGROUND-COLOR RED
+                   "Error: La fecha no puede ser anterior a hoy     "
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PEDIR-FECHA-PUNTUAL
            END-IF.
 
            GO TO FIN-PEDIR-FECHA.
+
+       FECHA-PUNTUAL-INVALIDA.
+           DISPLAY (20, 19)
+               "Error: Fecha invalida (DD/MM/AAAA)              "
+               WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
+           GO TO PEDIR-FECHA-PUNTUAL.
 
        PEDIR-DIA-MENSUAL.
            ACCEPT PANTALLA-DIA-MENSUAL.
@@ -385,7 +401,7 @@
               TRF-DIA < 1 OR TRF-DIA > 28 THEN
                DISPLAY (20, 19)
                    "Error: Dia invalido (01-28)                     "
-                   WITH BACKGROUND-COLOR RED
+                   WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PEDIR-DIA-MENSUAL
            END-IF.
 
@@ -410,6 +426,18 @@
            DISPLAY (12, 38) " EUR de su cuenta".
            DISPLAY (13, 19) "a la cuenta cuyo titular es".
            DISPLAY (13, 48) NOMBRE-DESTINO.
+           IF TIPO-TRF = "P" OR TIPO-TRF = "p" THEN
+               DISPLAY (15, 19) "Se ejecutara el dia"
+               DISPLAY (15, 39) TRF-DIA
+               DISPLAY (15, 41) "/"
+               DISPLAY (15, 42) TRF-MES
+               DISPLAY (15, 44) "/"
+               DISPLAY (15, 45) TRF-ANO
+           END-IF.
+           IF TIPO-TRF = "M" OR TIPO-TRF = "m" THEN
+               DISPLAY (15, 19) "Se ejecutara todos los meses el dia"
+               DISPLAY (15, 55) TRF-DIA
+           END-IF.
 
            DISPLAY (24, 2) "Enter - Confirmar".
            DISPLAY (24, 66) "ESC - Cancelar".
@@ -596,7 +624,8 @@
            ADD 1 TO MAX-MOV-NUM.
            MOVE MAX-MOV-NUM TO MOV-NUM.
            MOVE TNUM TO MOV-TARJETA.
-           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES.
+           MOVE DIA TO MOV-DIA.
            MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
            MOVE SEGUNDOS TO MOV-SEG.
            COMPUTE MOV-IMPORTE-ENT = EURENT-USUARIO * -1.
@@ -616,7 +645,8 @@
            ADD 1 TO MAX-MOV-NUM.
            MOVE MAX-MOV-NUM TO MOV-NUM.
            MOVE CUENTA-DESTINO TO MOV-TARJETA.
-           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES. MOVE DIA TO MOV-DIA.
+           MOVE ANO TO MOV-ANO. MOVE MES TO MOV-MES.
+           MOVE DIA TO MOV-DIA.
            MOVE HORAS TO MOV-HOR. MOVE MINUTOS TO MOV-MIN.
            MOVE SEGUNDOS TO MOV-SEG.
            MOVE EURENT-USUARIO TO MOV-IMPORTE-ENT.
@@ -658,7 +688,7 @@
            CLOSE TARJETAS.
            PERFORM IMPRIMIR-CABECERA THRU IMPRIMIR-CABECERA.
            DISPLAY (9, 22) "La cuenta introducida es incorrecta"
-               WITH FOREGROUND-COLOR IS BLACK
+               WITH FOREGROUND-COLOR IS WHITE
                     BACKGROUND-COLOR IS RED.
            DISPLAY (24, 33) "Enter - Salir".
            GO TO EXIT-ENTER.
