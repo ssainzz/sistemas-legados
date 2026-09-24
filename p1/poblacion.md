@@ -1,7 +1,9 @@
 # Datos añadidos a los ficheros UBD
 
+El programa `POBLACION_PRODUCCION.cbl` limpia completamente los ficheros `.ubd` existentes (al abrirlos en modo `OUTPUT`) y genera los siguientes datos iniciales fijos de prueba:
+
 ## espectaculos.ubd
-Se añaden 16 registros estáticos correspondientes a eventos o conciertos, con fecha posterior a la actual. Cada registro se compone de ID, Fecha, Hora, Nombre y un campo de Datos (7 dígitos de entradas libres + 6 de precio con 2 decimales). Si un espectáculo ya existe no se duplica.
+Se añaden 16 registros estáticos correspondientes a eventos o conciertos, con fecha posterior a la actual. Cada registro se compone de ID, Fecha, Hora, Nombre y un campo de Datos (7 dígitos de entradas libres + 6 de precio con 2 decimales).
 
 | ID | Fecha | Hora | Nombre | Datos |
 | :--- | :--- | :--- | :--- | :--- |
@@ -23,23 +25,40 @@ Se añaden 16 registros estáticos correspondientes a eventos o conciertos, con 
 | 0020 | 20480101 | 1800 | Concierto Gala de Ano Nuevo | 0002500003000 |
 
 ## tarjetas.ubd
-Se añade 1 único registro generado dinámicamente al calcular cuál es el último número de tarjeta guardado y sumarle uno.
+Se generan 5 tarjetas iniciales de forma secuencial.
 
-* **Número de tarjeta (TNUM):** `WS-NUEVA-TARJETA` (Última tarjeta existente + 1, longitud 16).
-* **PIN (TPIN):** El mismo valor de `WS-NUEVA-TARJETA` truncado a 4 dígitos.
-
-## movimientos.ubd
-Se añade 1 único registro correspondiente al ingreso inicial de la nueva tarjeta generada.
-
-* **Número de Movimiento:** `WS-NUEVO-MOV` (Último movimiento existente + 1).
-* **Tarjeta Asociada:** `WS-NUEVA-TARJETA`.
-* **Fecha y Hora:** 15/01/2030 a las 12:00:00.
-* **Importe:** 5000.00.
-* **Concepto:** "INGRESO INICIAL DE PRUEBA".
-* **Saldo Posterior:** 5000.00.
+* **Número de tarjeta (TNUM):** Del `0000000000000001` al `0000000000000005`.
+* **PIN (TPIN):** Correspondiente a cada tarjeta (`0001` al `0005`).
 
 ## intentos.ubd
-Se añade 1 único registro para inicializar el contador de intentos de seguridad de la nueva tarjeta creada.
+Se generan 5 registros para inicializar el contador de intentos de seguridad de las tarjetas.
 
-* **Tarjeta Asociada (INT-TARJETA):** `WS-NUEVA-TARJETA`.
-* **Número de Intentos (INT-NUM):** 3 (Valor inicial por defecto).
+* **Tarjeta Asociada (INT-TARJETA):** Cada una de las 5 tarjetas iniciales.
+* **Número de Intentos (INT-NUM):** 3 (Valor inicial por defecto).
+
+## transferencias.ubd
+Se crean ejemplos de transferencias con distintos tipos para visualizar en las opciones del cajero:
+
+* **TRF 1:** Origen: Tarjeta 1, Destino: Tarjeta 2. Importe: 10.00 EUR. Tipo: `I` (Inmediata). Estado: `E` (Ejecutada).
+* **TRF 2:** Origen: Tarjeta 3, Destino: Tarjeta 4. Importe: 15.00 EUR. Tipo: `P` (Puntual). Estado: `P` (Pendiente).
+* **TRF 3:** Origen: Tarjeta 5, Destino: Tarjeta 3. Importe: 5.00 EUR. Tipo: `M` (Mensual). Estado: `E` (Ejecutada).
+
+## movimientos.ubd
+Se añaden movimientos para cada tarjeta que cuadren con un saldo inicial base de 50.00 EUR y los ejemplos de transferencias/retiradas añadidos:
+
+* **MOV 1 a 5:** Ingresos iniciales en cada tarjeta por importe de 50.00 EUR (Concepto: "INGRESO INICIAL").
+* **MOV 6:** Retirada de efectivo de 20.00 EUR en la Tarjeta 1.
+* **MOV 7:** Ingreso en cajero de 30.00 EUR en la Tarjeta 2.
+* **MOV 8:** Retirada de efectivo de 10.00 EUR en la Tarjeta 4.
+* **MOV 9:** Transferencia emitida (-10.00 EUR) en la Tarjeta 1 correspondiente a la TRF 1.
+* **MOV 10:** Transferencia recibida (+10.00 EUR) en la Tarjeta 2 correspondiente a la TRF 1.
+* **MOV 11:** Transferencia emitida (-5.00 EUR) en la Tarjeta 5 correspondiente a la TRF 3.
+* **MOV 12:** Transferencia recibida (+5.00 EUR) en la Tarjeta 3 correspondiente a la TRF 3.
+*(La TRF 2 no genera movimientos aún por estar Pendiente).*
+
+Saldos finales resultantes:
+* Tarjeta 1: 20.00 EUR
+* Tarjeta 2: 90.00 EUR
+* Tarjeta 3: 55.00 EUR
+* Tarjeta 4: 40.00 EUR
+* Tarjeta 5: 45.00 EUR
