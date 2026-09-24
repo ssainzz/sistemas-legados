@@ -130,6 +130,7 @@
        77 PAGINA-ACTUAL            PIC 9(3).
        77 TOTAL-PAGINAS            PIC 9(3).
        77 LINEA-PANTALLA           PIC 9(2).
+       77 LINEA-VACIA PIC X(80) VALUE SPACES.
 
       *> Campos para mostrar
        01 FECHA-MOSTRAR            PIC 9(8).
@@ -326,7 +327,6 @@
            END-IF.
            MOVE 1 TO PAGINA-ACTUAL.
 
-       MOSTRAR-PAGINA.
            PERFORM IMPRIMIR-CABECERA THRU FIN-IMPRIMIR-CABECERA.
            DISPLAY (6, 27) "Listado de transferencias".
            DISPLAY (8, 3) "FECHA".
@@ -336,6 +336,12 @@
            DISPLAY (8, 55) "CUENTA".
            DISPLAY (9, 3) "----------------------------------------".
            DISPLAY (9, 43) "----------------------------".
+
+       MOSTRAR-PAGINA.
+           PERFORM VARYING LINEA-PANTALLA FROM 10 BY 1 
+               UNTIL LINEA-PANTALLA > 24
+               DISPLAY (LINEA-PANTALLA, 1) LINEA-VACIA
+           END-PERFORM.
 
            IF NUM-FILAS = 0
                DISPLAY (12, 16)
