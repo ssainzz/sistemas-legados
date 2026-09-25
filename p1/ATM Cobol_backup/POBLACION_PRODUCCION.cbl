@@ -301,8 +301,8 @@
                *> MOVIMIENTO INICIAL DE INGRESO (50 EUR)
                MOVE WS-I TO MOV-NUM
                MOVE WS-I TO MOV-TARJETA
-               MOVE 2030 TO MOV-ANO
-               MOVE 1 TO MOV-MES
+               MOVE 2026 TO MOV-ANO
+               MOVE 9 TO MOV-MES
                MOVE 15 TO MOV-DIA
                MOVE 12 TO MOV-HOR
                MOVE 0 TO MOV-MIN
@@ -321,8 +321,8 @@
            *> MOV 6: Retirada tarjeta 1 (-20)
            MOVE 6 TO MOV-NUM
            MOVE 1 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
            MOVE 16 TO MOV-DIA
            MOVE 9 TO MOV-HOR
            MOVE 0 TO MOV-MIN
@@ -337,8 +337,8 @@
            *> MOV 7: Ingreso tarjeta 2 (+30)
            MOVE 7 TO MOV-NUM
            MOVE 2 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
            MOVE 16 TO MOV-DIA
            MOVE 9 TO MOV-HOR
            MOVE 30 TO MOV-MIN
@@ -353,9 +353,9 @@
            *> MOV 8: Retirada tarjeta 4 (-10)
            MOVE 8 TO MOV-NUM
            MOVE 4 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
-           MOVE 16 TO MOV-DIA
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
+           MOVE 17 TO MOV-DIA
            MOVE 10 TO MOV-HOR
            MOVE 15 TO MOV-MIN
            MOVE 0 TO MOV-SEG
@@ -375,16 +375,16 @@
            MOVE 10 TO TRF-IMPORTE-ENT
            MOVE 0 TO TRF-IMPORTE-DEC
            MOVE "I" TO TRF-TIPO
-           MOVE 20300116 TO TRF-FECHA
+           MOVE 20260917 TO TRF-FECHA
            MOVE "E" TO TRF-ESTADO
            WRITE TRF-REG.
 
            *> MOV 9: TRF Emitida Tarjeta 1
            MOVE 9 TO MOV-NUM
            MOVE 1 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
-           MOVE 16 TO MOV-DIA
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
+           MOVE 17 TO MOV-DIA
            MOVE 11 TO MOV-HOR
            MOVE 0 TO MOV-MIN
            MOVE 0 TO MOV-SEG
@@ -398,9 +398,9 @@
            *> MOV 10: TRF Recibida Tarjeta 2
            MOVE 10 TO MOV-NUM
            MOVE 2 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
-           MOVE 16 TO MOV-DIA
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
+           MOVE 17 TO MOV-DIA
            MOVE 11 TO MOV-HOR
            MOVE 0 TO MOV-MIN
            MOVE 0 TO MOV-SEG
@@ -418,7 +418,7 @@
            MOVE 15 TO TRF-IMPORTE-ENT
            MOVE 0 TO TRF-IMPORTE-DEC
            MOVE "P" TO TRF-TIPO
-           MOVE 20300117 TO TRF-FECHA
+           MOVE 20260918 TO TRF-FECHA
            MOVE "P" TO TRF-ESTADO   *> Pendiente
            WRITE TRF-REG.
            
@@ -431,16 +431,16 @@
            MOVE 5 TO TRF-IMPORTE-ENT
            MOVE 0 TO TRF-IMPORTE-DEC
            MOVE "M" TO TRF-TIPO
-           MOVE 20300118 TO TRF-FECHA
+           MOVE 20260920 TO TRF-FECHA
            MOVE "E" TO TRF-ESTADO
            WRITE TRF-REG.
 
            *> MOV 11: TRF Emitida Tarjeta 5
            MOVE 11 TO MOV-NUM
            MOVE 5 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
-           MOVE 18 TO MOV-DIA
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
+           MOVE 20 TO MOV-DIA
            MOVE 10 TO MOV-HOR
            MOVE 0 TO MOV-MIN
            MOVE 0 TO MOV-SEG
@@ -454,9 +454,9 @@
            *> MOV 12: TRF Recibida Tarjeta 3
            MOVE 12 TO MOV-NUM
            MOVE 3 TO MOV-TARJETA
-           MOVE 2030 TO MOV-ANO
-           MOVE 1 TO MOV-MES
-           MOVE 18 TO MOV-DIA
+           MOVE 2026 TO MOV-ANO
+           MOVE 9 TO MOV-MES
+           MOVE 20 TO MOV-DIA
            MOVE 10 TO MOV-HOR
            MOVE 0 TO MOV-MIN
            MOVE 0 TO MOV-SEG

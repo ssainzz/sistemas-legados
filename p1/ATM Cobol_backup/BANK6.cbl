@@ -279,14 +279,19 @@
 
            IF CUENTA-DESTINO = 0 THEN
                DISPLAY (20, 19)
-                   "Error: Cuenta invalida o vacia!!"
+                   "                                                "
+                   WITH BACKGROUND-COLOR BLACK
+               DISPLAY (20, 19) "Error: Cuenta invalida o vacia!!"
                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
 
            IF CUENTA-DESTINO = TNUM THEN
                DISPLAY (20, 19)
-                   "Error: No puedes transferirte a ti mismo"
+                   "                                                "
+                   WITH BACKGROUND-COLOR BLACK
+               DISPLAY (20, 19) 
+               "Error: No puedes transferirte a ti mismo"
                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
@@ -296,7 +301,9 @@
 
            IF CENT-IMPOR-USER <= 0 THEN
                DISPLAY (20, 19)
-                   "Error: Cantidad invalida"
+                   "                                                "
+                   WITH BACKGROUND-COLOR BLACK
+               DISPLAY (20, 19) "Error: Cantidad invalida"
                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO INDICAR-CTA-DST
            END-IF.
@@ -324,7 +331,9 @@
               TIPO-TRF NOT = "P" AND TIPO-TRF NOT = "p" AND
               TIPO-TRF NOT = "M" AND TIPO-TRF NOT = "m" THEN
                DISPLAY (20, 19)
-                   "Error: Indique I, P o M"
+                   "                                                "
+                   WITH BACKGROUND-COLOR BLACK
+               DISPLAY (20, 19) "Error: Indique I, P o M"
                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PEDIR-TIPO-TRF
            END-IF.
@@ -340,7 +349,9 @@
                                              + SALDO-USER-DEC
                IF CENT-SALDO-ORD-USER < CENT-IMPOR-USER THEN
                    DISPLAY (20, 19)
-                       "Indique una cantidad menor!!"
+                      "                                                "
+                       WITH BACKGROUND-COLOR BLACK
+                   DISPLAY (20, 19) "Indique una cantidad menor!!"
                        WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                    GO TO INDICAR-CTA-DST
                END-IF
@@ -378,7 +389,10 @@
            MOVE FUNCTION CURRENT-DATE TO CAMPOS-FECHA.
            IF TRF-FECHA-NUM < (ANO * 10000) + (MES * 100) + DIA THEN
                DISPLAY (20, 19)
-                   "Error: La fecha no puede ser anterior a hoy     "
+                   "                                                "
+                   WITH BACKGROUND-COLOR BLACK
+               DISPLAY (20, 19) 
+                   "Error: La fecha no puede ser anterior a hoy"
                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PEDIR-FECHA-PUNTUAL
            END-IF.
@@ -387,7 +401,9 @@
 
        FECHA-PUNTUAL-INVALIDA.
            DISPLAY (20, 19)
-               "Error: Fecha invalida (DD/MM/AAAA)              "
+               "                                                "
+               WITH BACKGROUND-COLOR BLACK.
+           DISPLAY (20, 19) "Error: Fecha invalida (DD/MM/AAAA)"
                WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED.
            GO TO PEDIR-FECHA-PUNTUAL.
 
@@ -400,7 +416,9 @@
            IF TRF-DIA NOT NUMERIC OR
               TRF-DIA < 1 OR TRF-DIA > 28 THEN
                DISPLAY (20, 19)
-                   "Error: Dia invalido (01-28)                     "
+                   "                                                "
+                   WITH BACKGROUND-COLOR BLACK
+               DISPLAY (20, 19) "Error: Dia invalido (01-28)"
                    WITH FOREGROUND-COLOR WHITE BACKGROUND-COLOR RED
                GO TO PEDIR-DIA-MENSUAL
            END-IF.
