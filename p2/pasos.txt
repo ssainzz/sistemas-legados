@@ -1,0 +1,34 @@
+Paso 1: Programar la comunicación en segundo plano (Screen-Scraping): 
+Tenéis que escribir el código de vuestro programa para que ejecute el emulador s3270 
+(o ws3270 en Windows) como un proceso interno. Debéis capturar su entrada y salida estándar 
+para enviarle comandos script y leer el contenido de la pantalla.   
+
+Paso 2: Desarrollar la Interfaz Gráfica (GUI): 
+Debéis crear la interfaz de ventanas usando cualquier lenguaje o plataforma (el enunciado pone Java como ejemplo).
+ La interfaz debe mostrar una lista con las tareas, y tener al menos un botón de "Nueva" y otro de "Salir".   
+
+Paso 3: Extraer y enviar datos sin modificar el código original:
+ Vuestro programa debe interactuar con el mainframe a través de la aplicación legada
+para obtener los datos de las tareas y mostrarlos en la GUI. Está prohibido alterar el código de tareas.c
+ o acceder directamente al fichero de datos del disco.   
+
+Paso 4: Implementar la protección de desconexión (¡Muy Importante!):
+ Debéis programar un mecanismo de seguridad para asegurar que pase, como mínimo,
+1 segundo entre que el script se conecta al mainframe y se desconecta.
+Esto debe cumplirse tanto si el usuario sale normalmente de la aplicación como si se produce un error, 
+ya que de lo contrario bloquearéis el sistema para todos.   
+
+Paso 5: Preparar el ejecutable: 
+Tenéis que aseguraros de configurar la entrega de forma que el programa 
+y el emulador se puedan ejecutar desde Windows simplemente haciendo doble clic en un fichero.   
+
+Paso 6: Redactar la Memoria:
+Debéis escribir un documento de unas 4-5 páginas.
+En él tenéis que incluir: las principales dificultades encontradas (como problemas de sincronización),
+pantallazos de interés, el reparto de tareas dentro del grupo,
+el cronograma de trabajo e instrucciones necesarias para ejecutar la práctica.
+
+Paso 7: 
+Empaquetar y entregar: Sabiendo que sois el grupo 07, 
+debéis comprimir todo vuestro trabajo en un fichero llamado SL-P2-07.zip o SL-P2-07.rar
+ çy entregarlo antes del lunes 19 de octubre de 2026.   
