@@ -89,6 +89,9 @@ public class VentanaTareas extends JFrame {
 
         add(panelIzquierdo, BorderLayout.CENTER);
 
+        // TODO: Llamar a ConecionMainframe para obtener los datos de las tareas a mostrar
+        // (y en función de si se ha seleccionado Todas, Generales o Específicas).
+
         // --- Panel derecho (botones Nueva / Salir) ---
         JPanel panelDerecho = new JPanel(new BorderLayout());
         panelDerecho.setBorder(BorderFactory.createEmptyBorder(45, 10, 10, 15));
