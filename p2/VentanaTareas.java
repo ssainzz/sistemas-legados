@@ -17,7 +17,7 @@ public class VentanaTareas extends JFrame {
     private void configurarVentana() {
         setTitle("Gestor de Tareas - Grupo 07");
         setSize(600, 400);
-        // Evitamos que la ventana se cierre de golpe para controlar la desconexión[cite: 1]
+        // Evitamos que la ventana se cierre de golpe para controlar la desconexión
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); 
         setLocationRelativeTo(null);
 
@@ -33,13 +33,13 @@ public class VentanaTareas extends JFrame {
     private void inicializarComponentes() {
         setLayout(new BorderLayout(10, 10));
 
-        // 1. Tabla para la lista de tareas (según el boceto)[cite: 1]
+        // 1. Tabla para la lista de tareas
         String[] columnas = {"ID", "Descripción", "Estado"}; // Columnas genéricas iniciales
         String[][] datos = { {"XXXXX", "XXXXX", "XXXXX"} }; 
         tablaTareas = new JTable(datos, columnas);
         add(new JScrollPane(tablaTareas), BorderLayout.CENTER);
 
-        // 2. Panel lateral derecho para los botones[cite: 1]
+        // 2. Panel lateral derecho para los botones
         JPanel panelBotones = new JPanel();
         panelBotones.setLayout(new GridLayout(2, 1, 10, 10));
 
@@ -58,7 +58,7 @@ public class VentanaTareas extends JFrame {
     }
 
     private void cerrarAplicacion() {
-        // Garantizamos el mínimo de 1 segundo de espera antes de salir[cite: 1]
+        // Garantizamos el mínimo de 1 segundo de espera antes de salir
         if (conexion != null) {
             conexion.desconectarSeguro(); 
         }

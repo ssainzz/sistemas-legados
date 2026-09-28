@@ -31,4 +31,4 @@ el cronograma de trabajo e instrucciones necesarias para ejecutar la práctica.
 Paso 7: 
 Empaquetar y entregar: Sabiendo que sois el grupo 07, 
 debéis comprimir todo vuestro trabajo en un fichero llamado SL-P2-07.zip o SL-P2-07.rar
- çy entregarlo antes del lunes 19 de octubre de 2026.   
+ y entregarlo antes del lunes 19 de octubre de 2026.   

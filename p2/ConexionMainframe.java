@@ -9,7 +9,7 @@ public class ConexionMainframe {
 
     private Process process;
     private BufferedReader reader;
-    private PrintWriter err;
+    private BufferedReader err;
     private PrintWriter out;
 
     public void iniciarProceso() throws Exception {
@@ -18,8 +18,8 @@ public class ConexionMainframe {
         
         // Configura los canales de lectura y escritura
         reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-        err = new PrintWriter(new OutputStreamWriter(process.getErrorStream()), true);
-        out = new PrintWriter(new OutputStreamWriter(process.getOutputStream()), true);
+        err = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        out = new PrintWriter(new OutputStreamWriter(process.getOutputStream()), true); 
     }
 
     public void conectarYLogin() throws Exception {
@@ -36,7 +36,7 @@ public class ConexionMainframe {
     }
 
     public void abrirAplicacion() throws Exception {
-        // Ejecuta el programa legadode tareas
+        // Ejecuta el programa legado de tareas
         out.println("String(\"tareas.c\")");
         out.println("Enter()");
         Thread.sleep(2000);
