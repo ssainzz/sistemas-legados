@@ -276,10 +276,9 @@ public class VentanaTareas extends JFrame {
             } else if (!general && !nombre.matches("[\\p{Alnum}_-]{1," + MAX_NOMBRE + "}")) {
                 error = "El nombre debe ser una sola palabra de " + MAX_NOMBRE
                         + " caracteres como máximo (letras sin tilde, números, '-' o '_').";
-            } else if (desc.isEmpty() || desc.length() > MAX_DESCRIPCION) {
-                error = "La descripción es obligatoria y no puede superar los " + MAX_DESCRIPCION + " caracteres.";
-            } else if (!desc.matches("[\\p{Print}]+") || desc.contains("\"") || desc.contains("\\")) {
-                error = "La descripción solo admite caracteres sin tilde y sin comillas ni barras invertidas.";
+            } else if (!desc.matches("[\\p{Alnum}_-]{1," + MAX_DESCRIPCION + "}")) {
+                error = "La descripción debe ser una sola palabra de " + MAX_DESCRIPCION
+                        + " caracteres como máximo (letras sin tilde, números, '-' o '_').";
             }
             if (error != null) {
                 JOptionPane.showMessageDialog(this, error, "Datos no válidos", JOptionPane.WARNING_MESSAGE);
