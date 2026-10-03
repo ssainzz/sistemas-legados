@@ -31,7 +31,7 @@ move GestorTareas.jar input\ (o mv)
 > **Nota:** Si usas PowerShell, el comando es:
 >
 > ```powershell
-> mv Aplicacion.jar input\
+> mv GestorTareas.jar input\
 > ```
 
 ## 4. Crear la aplicación autónoma con jpackage
@@ -39,16 +39,16 @@ move GestorTareas.jar input\ (o mv)
 Ejecuta `jpackage` para crear la carpeta independiente con el `.exe` y la máquina virtual de Java (JRE) reducida e incrustada.
 
 ```bash
-jpackage --type app-image --name MiAppMainframe --input input --main-jar MiAppMainframe.jar --main-class Main
+jpackage --type app-image --name GestorTareas --input input --main-jar GestorTareas.jar --main-class Main
 ```
 
 ## 5. Incluir `ws3270.exe` en la carpeta final
 
-Una vez finalizado el paso anterior, aparecerá una nueva carpeta llamada `MiAppMainframe` en tu proyecto.
+Una vez finalizado el paso anterior, aparecerá una nueva carpeta llamada `GestorTareas` en tu proyecto.
 
-1. Copia tu archivo `ws3270.exe` y pégalo directamente en la raíz de esa nueva carpeta `MiAppMainframe` (justo al lado del archivo `MiAppMainframe.exe` recién generado).
-2. Comprime la carpeta `MiAppMainframe` entera en un archivo `.zip`.
+1. Copia tu archivo `ws3270.exe` y pégalo directamente en la raíz de esa nueva carpeta `GestorTareas` (justo al lado del archivo `GestorTareas.exe` recién generado).
+2. Comprime la carpeta `GestorTareas` entera en un archivo `.zip`.
 
 ## Resultado
 
-El usuario final solo tendrá que descomprimir el `.zip` y hacer doble clic en `MiAppMainframe.exe`. Todo lo necesario (Java y el cliente ws3270) ya está autocontenido en la carpeta.
+El usuario final solo tendrá que descomprimir el `.zip` y hacer doble clic en `GestorTareas.exe`. Todo lo necesario (Java y el cliente ws3270) ya está autocontenido en la carpeta.
