@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZX Spectrum Database</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F4F1EA; /* Color crema suave */
+        }
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Sombras sólidas Neo-brutalistas */
+        .brutal-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+        .brutal-shadow-sm {
+            box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+        }
+        
+        /* Efecto click en botones */
+        .brutal-btn {
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .brutal-btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 0px 0px 0px 0px rgba(0,0,0,1);
+        }
+
+        /* Colores sutiles ZX Spectrum */
+        .zx-red { background-color: #D9534F; }
+        .zx-yellow { background-color: #F0AD4E; }
+        .zx-green { background-color: #5CB85C; }
+        .zx-blue { background-color: #5BC0DE; }
+
+        /* Scrollbar Neo-brutalista */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 12px;
+            border-left: 2px solid black;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F4F1EA;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #000;
+            border: 2px solid #F4F1EA;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col p-4 md:p-6 gap-4 text-black box-border max-w-7xl mx-auto">
+
+    <!-- Cabecera -->
+    <header class="flex-none bg-white border-2 border-black brutal-shadow p-3 flex justify-between items-center relative overflow-hidden">
+        <!-- Detalle sutil ZX Spectrum en la parte superior del borde -->
+        <div class="absolute top-0 left-0 w-full h-1.5 flex">
+            <div class="w-1/4 h-full zx-red"></div>
+            <div class="w-1/4 h-full zx-yellow"></div>
+            <div class="w-1/4 h-full zx-green"></div>
+            <div class="w-1/4 h-full zx-blue"></div>
+        </div>
+
+        <div class="flex items-center gap-3 mt-1">
+            <div class="bg-black text-white font-bold px-2 py-1 text-sm border-2 border-black">
+                ZX
+            </div>
+            <h1 class="text-lg font-bold uppercase tracking-tight">Spectrum Data Wrapper</h1>
+        </div>
+
+        <!-- Indicador de registros (Color Terracota Suave) -->
+        <div class="bg-[#E29578] border-2 border-black brutal-shadow-sm px-4 py-1.5 flex items-center gap-3 mt-1">
+            <span class="text-xs font-bold uppercase">Registros:</span>
+            <span class="text-base font-mono font-bold bg-white px-2 py-0.5 border-2 border-black">763</span>
+        </div>
+    </header>
+
+    <!-- Formularios de Búsqueda -->
+    <div class="flex-none grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- Buscar por Nombre (Color Azul/Teal apagado) -->
+        <form onsubmit="event.preventDefault(); simulateWrapper();" class="bg-[#A3C4BC] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
+            <label for="name-input" class="text-xs font-bold uppercase">Buscar por Nombre</label>
+            <div class="flex gap-2">
+                <input type="text" id="name-input" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: PACMAN">
+                <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase">
+                    Buscar
+                </button>
+            </div>
+        </form>
+
+        <!-- Buscar por Cinta (Color Mostaza suave) -->
+        <form onsubmit="event.preventDefault(); simulateWrapper();" class="bg-[#E0A96D] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
+            <label for="tape-input" class="text-xs font-bold uppercase">Buscar por Cinta</label>
+            <div class="flex gap-2">
+                <input type="text" id="tape-input" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: A, 45, F">
+                <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase">
+                    Buscar
+                </button>
+            </div>
+        </form>
+
+    </div>
+
+    <!-- Área de Resultados -->
+    <div class="flex-1 flex flex-col bg-white border-2 border-black brutal-shadow overflow-hidden relative min-h-0">
+        
+        <!-- Capa de Carga -->
+        <div id="loading-overlay" class="absolute inset-0 bg-[#F4F1EA]/90 z-20 hidden flex-col items-center justify-center gap-3 border-b-2 border-black">
+            <div class="font-mono text-sm font-bold bg-black text-white px-4 py-2 uppercase animate-pulse border-2 border-black">
+                [ RPA & OCR Ejecutándose... ]
+            </div>
+        </div>
+
+        <!-- Cabecera de la Tabla -->
+        <div class="bg-black text-white flex-none pr-[12px]"> <!-- Padding right compensa el scrollbar grueso -->
+            <table class="w-full text-left text-xs uppercase font-bold">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-3 border-r-2 border-white w-16 text-center">Nº</th>
+                        <th class="py-2 px-3 border-r-2 border-white">Nombre del Programa</th>
+                        <th class="py-2 px-3 border-r-2 border-white w-40">Tipo</th>
+                        <th class="py-2 px-3 border-r-2 border-white w-20 text-center">Cinta</th>
+                        <th class="py-2 px-3 w-24 text-center">Registro</th>
+                    </tr>
+                </thead>
+            </table>
+        </div>
+        
+        <!-- Cuerpo de la Tabla (Scrollable) -->
+        <div class="flex-1 overflow-y-auto custom-scrollbar">
+            <table class="w-full text-left text-sm font-mono">
+                <tbody id="results-data">
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">217</td>
+                        <td class="py-2 px-3 border-r-2 border-black">ESCAPE FROM SINGE'S CASTLE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">3</td>
+                        <td class="py-2 px-3 w-24 text-center">423</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">218</td>
+                        <td class="py-2 px-3 border-r-2 border-black">ESKIMO EDDIE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">F</td>
+                        <td class="py-2 px-3 w-24 text-center">77</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">219</td>
+                        <td class="py-2 px-3 border-r-2 border-black">ESPIONAGE ISLAND</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">CONVERSACIONAL</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">0</td>
+                        <td class="py-2 px-3 w-24 text-center">431</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">220</td>
+                        <td class="py-2 px-3 border-r-2 border-black">ESTADISTICA</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">UTILIDAD</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">5</td>
+                        <td class="py-2 px-3 w-24 text-center">465</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">221</td>
+                        <td class="py-2 px-3 border-r-2 border-black">EVERYONE'S A WALLY</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">VIDEOAVENTURA</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">F</td>
+                        <td class="py-2 px-3 w-24 text-center">75</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">222</td>
+                        <td class="py-2 px-3 border-r-2 border-black">EXOLON</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">16</td>
+                        <td class="py-2 px-3 w-24 text-center">582</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">223</td>
+                        <td class="py-2 px-3 border-r-2 border-black">EXPRESS RAIDER</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">4</td>
+                        <td class="py-2 px-3 w-24 text-center">418</td>
+                    </tr>
+                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
+                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">224</td>
+                        <td class="py-2 px-3 border-r-2 border-black">F-15 STRIKE EAGLE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
+                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">14</td>
+                        <td class="py-2 px-3 w-24 text-center">552</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pie de tabla (Status) -->
+        <div class="bg-[#F4F1EA] border-t-2 border-black p-2 flex-none flex justify-between items-center text-xs font-bold uppercase">
+            <span>Mostrando datos en vivo</span>
+            <span>OK - Conectado</span>
+        </div>
+    </div>
+
+    <!-- Script -->
+    <script>
+        function simulateWrapper() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            
+            // Mostrar carga
+            loadingOverlay.classList.remove('hidden');
+            loadingOverlay.classList.add('flex');
+            
+            // Limpiar campos
+            document.getElementById('name-input').value = '';
+            document.getElementById('tape-input').value = '';
+
+            // Simular retraso
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                loadingOverlay.classList.remove('flex');
+            }, 1200);
+        }
+    </script>
+</body>
+</html>
