@@ -1,2 +1,8 @@
 stdout.txt
 stderr.txt
+
+# Compilación Maven (jar, clases)
+target/
+
+# Capturas y texto del OCR de depuración (debug.save=true)
+debug/
