@@ -153,6 +153,36 @@ public final class LegacyService {
         });
     }
 
+    // ------------------------------------------------- herramientas de desarrollo
+
+    /**
+     * Recorre el listado completo (opcion 6) y guarda cada pantalla tal cual se captura, sin OCR.
+     * Sirve para construir el corpus con el que se mide el OCR y se aprende la fuente de DOSBox.
+     * Solo pulsa 6, Enter y espacio: no modifica datos.
+     */
+    public int capturarCorpus(java.nio.file.Path dir) {
+        return locked(() -> {
+            begin();
+            try {
+                screen.save(screen.capture(), dir.resolve("menu.png"));
+                int n = 0;
+                BufferedImage prev = screen.captureAfter(() -> kb.typeChar('6'));
+                screen.save(prev, dir.resolve("listado-cabecera.png"));
+                prev = screen.captureAfter(kb::enter);
+                for (int page = 1; page <= 50; page++) {
+                    screen.save(prev, dir.resolve(String.format("listado-%02d.png", page)));
+                    n = page;
+                    BufferedImage next = screen.captureAfter(kb::space);
+                    if (ScreenReader.sameImage(prev, next)) break; // la pantalla ya no cambia
+                    prev = next;
+                }
+                return n;
+            } catch (java.io.IOException e) {
+                throw new LegacyException("No se pudo guardar el corpus", e);
+            }
+        });
+    }
+
     // -------------------------------------------------------------- internos
 
     private <T> T locked(Supplier<T> op) {

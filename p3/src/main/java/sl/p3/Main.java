@@ -38,6 +38,10 @@ public final class Main {
                 System.out.println("Imagen guardada en " + out.toAbsolutePath());
                 System.out.println("--- texto OCR ---\n" + sr.ocr(img));
             }
+            case "corpus" -> {
+                Path dir = Path.of(args.length > 1 ? args[1] : "corpus");
+                System.out.println("Pantallas guardadas: " + legacy.capturarCorpus(dir) + " en " + dir.toAbsolutePath());
+            }
             case "contar" -> System.out.println(legacy.contarRegistros());
             case "programa" -> System.out.println(legacy.buscarPorNombre(String.join(" ",
                     java.util.Arrays.copyOfRange(args, 1, args.length))));

@@ -90,6 +90,10 @@ public final class ScreenReader {
         return last; // TODO: avisar en el log de que la pantalla no llego a estabilizarse
     }
 
+    static boolean sameImage(BufferedImage a, BufferedImage b) {
+        return same(a, b);
+    }
+
     private static boolean same(BufferedImage a, BufferedImage b) {
         if (a.getWidth() != b.getWidth() || a.getHeight() != b.getHeight()) return false;
         int w = a.getWidth(), h = a.getHeight();
