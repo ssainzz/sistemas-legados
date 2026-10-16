@@ -58,6 +58,13 @@ class GlyphReaderTest {
             expected = rows.get(rows.size() - 1).numero() + 1;
         }
         assertEquals(763, all.size());
+        // Se respetan las minusculas y los signos de la aplicacion original.
+        assertEquals("BARRY McGUIGAN'S BOXING", all.get(235).nombre());
+        assertEquals("FRIDAY 13th", all.get(240).nombre());
+        assertEquals("---", all.get(612).tipo()); // LES FLICS: sin tipo
+        // Un programa en varias cintas pertenece a cada una de ellas, y "4" no esta en "45".
+        assertTrue(all.get(234).estaEnCinta("Q") && all.get(234).estaEnCinta("25"));
+        assertFalse(all.get(234).estaEnCinta("2"));
         assertEquals("MUGSY", all.get(0).nombre());
         assertEquals("BYTE MASTER", all.get(762).nombre());
     }

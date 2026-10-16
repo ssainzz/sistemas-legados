@@ -31,7 +31,8 @@ public final class ScreenParser {
 
     private static final Pattern CINTA_OK = Pattern.compile("[A-Z0-9]+(?:-[A-Z0-9]+)*");
     private static final Pattern COUNT = Pattern.compile("CONT\\w*\\s+(\\d+)\\s+ARCH\\w*");
-    private static final Pattern SINGLE = Pattern.compile("^(\\d{1,3})\\s*-\\s*(.+?)\\s+CINTA\\s*:\\s*(\\S+)\\s*$");
+    private static final Pattern SINGLE = Pattern.compile("^(\\d{1,3})\\s*-\\s*(.+?)\\s+CINTA\\s*:\\s*(\\S+)\\s*$",
+            Pattern.CASE_INSENSITIVE);
     private static final Pattern ROW = Pattern.compile("^(\\d{1,3})\\s+(.+?)\\s+(\\S+)\\s+(\\d{1,3})$");
 
     /**
@@ -60,7 +61,7 @@ public final class ScreenParser {
     // ---------------------------------------------------------------- opcion 7
 
     public static Optional<ProgramRecord> parseSingle(String ocr) {
-        for (String line : normalize(ocr).split("\\R")) {
+        for (String line : keepCase(ocr).split("\\R")) {
             Matcher m = SINGLE.matcher(line.trim());
             if (!m.matches()) continue;
             String[] nt = splitNameAndType(m.group(2));
@@ -75,7 +76,7 @@ public final class ScreenParser {
     /** Filas del listado reconocidas en una pagina. Las lineas que no encajan se ignoran. */
     public static List<ProgramRecord> parseListingPage(String ocr) {
         List<ProgramRecord> rows = new ArrayList<>();
-        for (String line : normalize(ocr).split("\\R")) {
+        for (String line : keepCase(ocr).split("\\R")) {
             Matcher m = ROW.matcher(line.trim());
             if (!m.matches()) continue;
             String cinta = cleanCinta(m.group(3));
@@ -113,6 +114,11 @@ public final class ScreenParser {
         return normalize(screenText).contains(normalize(phrase));
     }
 
+    /** Quita acentos pero conserva las mayusculas/minusculas (los nombres de programas las tienen). */
+    static String keepCase(String s) {
+        return Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+    }
+
     static String normalize(String s) {
         String n = Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return n.toUpperCase();
@@ -125,10 +131,11 @@ public final class ScreenParser {
 
     /** "ARCADE" al final de "HUNCHBACK ARCADE" -> {"HUNCHBACK", "ARCADE"}; tolera 1-2 errores de OCR. */
     static String[] splitNameAndType(String middle) {
-        String m = middle.trim().toUpperCase();
+        String orig = middle.trim();   // se conserva tal cual (hay nombres con minusculas: "McGUIGAN'S")
+        String m = orig.toUpperCase(); // solo para comparar con los tipos
         // Hay programas sin tipo definido: la aplicacion muestra "---" en esa columna.
         if (m.endsWith(" " + SIN_TIPO) && m.length() > SIN_TIPO.length() + 1) {
-            return new String[]{m.substring(0, m.length() - SIN_TIPO.length()).trim(), SIN_TIPO};
+            return new String[]{orig.substring(0, m.length() - SIN_TIPO.length()).trim(), SIN_TIPO};
         }
         String bestType = null;
         int bestDist = Integer.MAX_VALUE, bestCut = -1;
@@ -146,9 +153,9 @@ public final class ScreenParser {
             }
         }
         if (bestType != null && bestDist <= 2) {
-            return new String[]{m.substring(0, bestCut).trim(), bestType};
+            return new String[]{orig.substring(0, bestCut).trim(), bestType};
         }
-        return new String[]{m, ""};
+        return new String[]{orig, ""};
     }
 
     static int levenshtein(String a, String b) {
