@@ -111,14 +111,75 @@ Formato de cada entrada: **síntoma → causa → solución → estado**.
       `M E N U` como `N E N U`, `INFORMACION` como `INFORPHCION`, `IMPRIMIR` como `INPRINIR`, `8` como `O`.
     - Qué funciona: el caso de uso 1 (`contar`) devuelve 763 en unos 4 s, porque solo necesita una palabra y un número
       y ambos salen bien.
-    - Estado: **sin resolver**. Hay que medir las variantes de Tesseract y, si no llegan al 100 %, sustituir el OCR por
-      otro método (el enunciado lo permite: "todo vale excepto cambiar la aplicación legada").
+    - Intento que no funcionó: Tesseract con escala 2 sin binarizar (la configuración por defecto del esqueleto).
+    - Solución: lector por plantillas de carácter (`GlyphReader`), ver el problema 18. Tesseract se mantiene como
+      motor alternativo (`ocr.engine=tesseract`) para poder medirlo y compararlo en la memoria.
+    - Estado: resuelto con el lector por plantillas. **Pendiente:** medir las variantes de Tesseract para la memoria.
 
 17. **Tras un fallo del wrapper, DOSBox queda a mitad de una pregunta y la siguiente ejecución no se recupera**
     - Síntoma: "La aplicacion legada no esta en el menu y no se pudo recuperar".
     - Causa: `recoverToMenu()` solo pulsa Enter, y en la pregunta "¿SABES EL NUMERO...? (S/N)" Enter no hace nada.
     - Solución provisional: salir a mano con N, un nombre inexistente, Enter y N.
-    - Estado: **sin resolver** en el código. La recuperación debe contemplar las preguntas S/N.
+    - Solución definitiva: `recoverToMenu()` lee la pantalla y responde según lo que ve: tecla `X` en un listado, `N` a
+      cualquier pregunta S/N, un nombre inexistente si pide nombre, Enter en el resto. Nunca envía `S`.
+    - Estado: resuelto. Probado dejando DOSBox a mitad del listado: el siguiente `contar` volvió al menú y devolvió 763.
+
+### Lector por plantillas y sincronización (16/10/2026)
+
+18. **Cambio de motor de lectura: de Tesseract a un lector por plantillas de carácter**
+    - Idea: DOSBox pinta el texto en una cuadrícula exacta de 80×25 celdas de 8×16 píxeles, con una sola fuente y sin
+      suavizado. En vez de "reconocer" formas, se compara cada celda con el dibujo de cada carácter.
+    - Cómo se construyó: se capturaron las 43 páginas del listado y varias pantallas de mensajes (comando `corpus`), se
+      recortaron las celdas, se agruparon las distintas (56 dibujos) y se les puso nombre a mano mirando una hoja de
+      muestras. Resultado en `src/main/resources/font8x16.txt`.
+    - Dificultad: la esquina inferior izquierda y derecha de la captura quedan recortadas por el borde redondeado de la
+      ventana de Windows 11, y la celda de esa esquina cambia en un píxel. Por eso se elige el dibujo MÁS PARECIDO
+      (menos píxeles distintos) en lugar de exigir coincidencia exacta; si ninguno se parece (>24 píxeles) se devuelve
+      `#` para que el fallo se note.
+    - Resultado: los 763 registros leídos sin un solo error y con numeración consecutiva (test `GlyphReaderTest`).
+    - Estado: resuelto.
+
+19. **El parser no conocía el tipo `---`**
+    - Síntoma: el test de las 43 páginas falló en la página 35 con "tipo no reconocido".
+    - Causa: el programa antiguo muestra `---` en la columna TIPO de los programas sin tipo (por ejemplo LES FLICS,
+      VOLCANIC PLANET, LOADER). El lector acertaba; fallaba el parser.
+    - Solución: `ScreenParser.SIN_TIPO` y tratamiento específico en `splitNameAndType`.
+    - Estado: resuelto.
+
+20. **El wrapper leía la pantalla antes de que el programa antiguo respondiera (búsqueda por nombre)**
+    - Síntoma: `programa FEUD` fallaba con "se esperaba 'ES ESTE'" aunque el texto se leía perfectamente.
+    - Causa: tras escribir el nombre y pulsar Enter, GW-BASIC recorre los 763 registros y tarda varios segundos. Durante
+      ese tiempo la pantalla no cambia, y la espera "hasta que se estabilice" daba por terminada la operación.
+    - Solución: `ScreenReader.captureUntil` y `LegacyService.waitFor`: tras cada acción se espera hasta que aparezca la
+      frase de la pantalla siguiente ("ES ESTE", "ALTERAR", ...), con un tiempo máximo (8 s; 30 s para la búsqueda).
+    - Estado: resuelto. `programa FEUD`, `FAIRLIGHT II` y un nombre inexistente dan el resultado correcto en 4-6 s.
+
+21. **Páginas del listado leídas a medio dibujar (`cinta Q` fallaba en la página 16)**
+    - Síntoma: "Página 16 ilegible: fila 0 número 253 (esperado 264)". La captura tenía solo 11 de 18 filas.
+    - Causa: la aplicación pinta las filas una a una, y el aviso "PULSA SPACE" de la página anterior sigue en pantalla
+      mientras tanto. Con "la primera fila es la esperada y hay aviso" se daba por buena una página incompleta.
+    - Solución: una página solo se acepta si tiene TODAS sus filas (18, o las que queden hasta el último registro).
+    - Estado: resuelto. `cinta A`, `21`, `25`, `L` y `Q` funcionan (unos 25 s cada una).
+
+22. **Los nombres perdían las minúsculas ("McGUIGAN'S" salía como "MCGUIGAN'S")**
+    - Causa: el parser pasaba todo el texto a mayúsculas antes de analizarlo. Hay nombres reales con minúsculas
+      (`McGUIGAN'S`, `FRIDAY 13th`).
+    - Solución: `keepCase` (quita acentos pero conserva el caso) para analizar filas; el nombre se devuelve tal cual.
+    - Estado: resuelto, con test.
+
+23. **Error mío en una prueba: se pulsó la opción 5 (IMPRIMIR DATOS)**
+    - Síntoma: un script de prueba envió un `5` a DOSBox y apareció "DIME LOS CAMPOS QUE QUIERES IMPRIMIR".
+    - Causa: error al escribir el script de prueba; la regla del proyecto es no usar nunca las opciones 1, 2, 3 y 5.
+    - Consecuencias: ninguna. Solo llegó a la primera pregunta y no se respondió. `DATOS.DAT` e `INFORM.DAT` conservan
+      la misma fecha y tamaño y git no detecta cambios en `Database/`.
+    - Solución: se cerró DOSBox y se reinició con `database.bat`, para no responder preguntas de una opción que imprime.
+    - Estado: resuelto.
+
+24. **`python` colgaba la terminal**
+    - Causa: en este PC `python` es el acceso directo de la tienda de Windows y se queda esperando.
+    - Solución: no usar Python; las tareas auxiliares se hacen con Java (`java Fichero.java`) o PowerShell.
+    - Estado: resuelto.
+
 
 ---
 
@@ -130,7 +191,8 @@ Se mueven a la sección 1 cuando se confirmen.
   `C:\Users\berta\AppData\Local\DOSBox\`. En cada PC se usará la propia, y su tamaño de ventana puede variar.
 - **Escalado de pantalla distinto de 100 %:** las coordenadas de la ventana pueden no coincidir con las del `Robot`.
 - **El OCR no llega al 100 %:** el enunciado ya lo avisa. Aún no hay medidas de precisión.
-- **Fin del listado por cinta:** no se ha verificado cómo termina la última página.
+- ~~**Fin del listado por cinta**~~ Resuelto: la última página (registros 757 a 763) sigue mostrando "PULSA SPACE" y
+  cualquier tecla vuelve al menú.
 - **Nombres repetidos y búsqueda por subcadena** en la opción 7 del programa legado.
 - **Caracteres no soportados:** `KeyboardDriver` solo escribe A-Z, 0-9, espacio y `-`.
 - **Foco y ventana encima:** si otra ventana toma el foco mientras el robot escribe, las teclas van a otro programa.
