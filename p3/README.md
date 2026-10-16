@@ -70,5 +70,11 @@ Nunca usar las opciones 1, 2, 3 ni 5 del menú (modifican/imprimen datos).
 - [ ] Config propia de DOSBox con `-conf` (hoy usa la de `%LOCALAPPDATA%\DOSBox`) y ventana a posición/tamaño fijos.
 - [ ] Probar `arrancar.bat` en un Windows limpio.
 - [ ] La web carga Tailwind y las fuentes desde internet: valorar incluirlas en local.
-- [ ] Memoria (4-5 págs.): pasos, fallos, OCR, capturas, reparto de tareas y horas.
+- [x] Memoria (borrador en `memoria/memoria.docx`, editable en Google Docs). Falta el reparto de tareas y las horas (tabla vacía).
 - [ ] Empaquetar `SL-P3-nn.zip` incluyendo `target\wrapper-legacy.jar` ya compilado.
+
+## Memoria
+
+`memoria/memoria.docx` se genera con `memoria/generar_memoria.js` (Node, librería `docx`) a partir de las figuras de
+`memoria/figuras/`. Para regenerarla: `npm install docx` y `node memoria/generar_memoria.js`. También se puede editar
+directamente el `.docx` (por ejemplo subiéndolo a Google Docs).
