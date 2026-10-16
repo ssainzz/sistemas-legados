@@ -6,6 +6,7 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinDef.POINT;
 import com.sun.jna.platform.win32.WinDef.RECT;
 import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.win32.StdCallLibrary;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -26,6 +27,13 @@ import java.util.Optional;
  * (pixeles fisicos) coinciden con las de Robot (pixeles logicos). Si no, usar capture.* en la config.
  */
 public final class DosboxWindow {
+    /** jna-platform no trae ClientToScreen en User32: se declara aqui. */
+    private interface ClientToScreenLib extends StdCallLibrary {
+        ClientToScreenLib INSTANCE = Native.load("user32", ClientToScreenLib.class);
+
+        boolean ClientToScreen(HWND hWnd, POINT lpPoint);
+    }
+
     private final String titlePrefix;
 
     public DosboxWindow(String titlePrefix) {
@@ -64,7 +72,7 @@ public final class DosboxWindow {
         RECT r = new RECT();
         User32.INSTANCE.GetClientRect(h, r);
         POINT origin = new POINT(0, 0);
-        User32.INSTANCE.ClientToScreen(h, origin);
+        ClientToScreenLib.INSTANCE.ClientToScreen(h, origin);
         return new Rectangle(origin.x, origin.y, r.right - r.left, r.bottom - r.top);
     }
 }
