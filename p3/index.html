@@ -78,33 +78,35 @@
             <h1 class="text-lg font-bold uppercase tracking-tight">Spectrum Data Wrapper</h1>
         </div>
 
-        <!-- Indicador de registros (Color Terracota Suave) -->
+        <!-- Indicador de registros (Color Terracota Suave): se consulta a la aplicación legada cada vez -->
         <div class="bg-[#E29578] border-2 border-black brutal-shadow-sm px-4 py-1.5 flex items-center gap-3 mt-1">
             <span class="text-xs font-bold uppercase">Registros:</span>
-            <span class="text-base font-mono font-bold bg-white px-2 py-0.5 border-2 border-black">763</span>
+            <span id="count" class="text-base font-mono font-bold bg-white px-2 py-0.5 border-2 border-black min-w-[3.5rem] text-center">…</span>
+            <button type="button" id="refresh-btn" title="Volver a preguntar a la aplicación legada"
+                    class="brutal-btn bg-white border-2 border-black text-sm font-bold px-2 py-0.5 brutal-shadow-sm">&#8635;</button>
         </div>
     </header>
 
     <!-- Formularios de Búsqueda -->
     <div class="flex-none grid grid-cols-1 md:grid-cols-2 gap-4">
-        
+
         <!-- Buscar por Nombre (Color Azul/Teal apagado) -->
-        <form onsubmit="event.preventDefault(); simulateWrapper();" class="bg-[#A3C4BC] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
+        <form id="name-form" class="bg-[#A3C4BC] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
             <label for="name-input" class="text-xs font-bold uppercase">Buscar por Nombre</label>
             <div class="flex gap-2">
-                <input type="text" id="name-input" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: PACMAN">
-                <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase">
+                <input type="text" id="name-input" autocomplete="off" maxlength="40" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono uppercase" placeholder="Ej: FEUD">
+                <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase disabled:opacity-50">
                     Buscar
                 </button>
             </div>
         </form>
 
         <!-- Buscar por Cinta (Color Mostaza suave) -->
-        <form onsubmit="event.preventDefault(); simulateWrapper();" class="bg-[#E0A96D] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
+        <form id="tape-form" class="bg-[#E0A96D] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
             <label for="tape-input" class="text-xs font-bold uppercase">Buscar por Cinta</label>
             <div class="flex gap-2">
-                <input type="text" id="tape-input" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: A, 45, F">
-                <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase">
+                <input type="text" id="tape-input" autocomplete="off" maxlength="3" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono uppercase" placeholder="Ej: A, 45, F">
+                <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase disabled:opacity-50">
                     Buscar
                 </button>
             </div>
@@ -114,12 +116,14 @@
 
     <!-- Área de Resultados -->
     <div class="flex-1 flex flex-col bg-white border-2 border-black brutal-shadow overflow-hidden relative min-h-0">
-        
+
         <!-- Capa de Carga -->
         <div id="loading-overlay" class="absolute inset-0 bg-[#F4F1EA]/90 z-20 hidden flex-col items-center justify-center gap-3 border-b-2 border-black">
             <div class="font-mono text-sm font-bold bg-black text-white px-4 py-2 uppercase animate-pulse border-2 border-black">
-                [ RPA & OCR Ejecutándose... ]
+                [ RPA &amp; OCR Ejecutándose... ]
             </div>
+            <div id="loading-text" class="font-mono text-xs font-bold text-center px-4"></div>
+            <div class="font-mono text-xs text-center px-4">No toques el teclado ni el ratón: el robot está escribiendo en DOSBox.</div>
         </div>
 
         <!-- Cabecera de la Tabla -->
@@ -136,96 +140,154 @@
                 </thead>
             </table>
         </div>
-        
+
         <!-- Cuerpo de la Tabla (Scrollable) -->
         <div class="flex-1 overflow-y-auto custom-scrollbar">
             <table class="w-full text-left text-sm font-mono">
-                <tbody id="results-data">
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">217</td>
-                        <td class="py-2 px-3 border-r-2 border-black">ESCAPE FROM SINGE'S CASTLE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">3</td>
-                        <td class="py-2 px-3 w-24 text-center">423</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">218</td>
-                        <td class="py-2 px-3 border-r-2 border-black">ESKIMO EDDIE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">F</td>
-                        <td class="py-2 px-3 w-24 text-center">77</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">219</td>
-                        <td class="py-2 px-3 border-r-2 border-black">ESPIONAGE ISLAND</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">CONVERSACIONAL</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">0</td>
-                        <td class="py-2 px-3 w-24 text-center">431</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">220</td>
-                        <td class="py-2 px-3 border-r-2 border-black">ESTADISTICA</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">UTILIDAD</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">5</td>
-                        <td class="py-2 px-3 w-24 text-center">465</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">221</td>
-                        <td class="py-2 px-3 border-r-2 border-black">EVERYONE'S A WALLY</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">VIDEOAVENTURA</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">F</td>
-                        <td class="py-2 px-3 w-24 text-center">75</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">222</td>
-                        <td class="py-2 px-3 border-r-2 border-black">EXOLON</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">16</td>
-                        <td class="py-2 px-3 w-24 text-center">582</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">223</td>
-                        <td class="py-2 px-3 border-r-2 border-black">EXPRESS RAIDER</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">4</td>
-                        <td class="py-2 px-3 w-24 text-center">418</td>
-                    </tr>
-                    <tr class="border-b-2 border-black hover:bg-[#F4F1EA] transition-colors bg-white">
-                        <td class="py-2 px-3 border-r-2 border-black w-16 text-center font-bold">224</td>
-                        <td class="py-2 px-3 border-r-2 border-black">F-15 STRIKE EAGLE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-40 text-xs">ARCADE</td>
-                        <td class="py-2 px-3 border-r-2 border-black w-20 text-center font-bold">14</td>
-                        <td class="py-2 px-3 w-24 text-center">552</td>
-                    </tr>
-                </tbody>
+                <tbody id="results-data"></tbody>
             </table>
+            <p id="results-msg" class="p-6 text-center text-sm font-bold font-mono">
+                Busca un programa por nombre o lista una cinta.
+            </p>
         </div>
-        
+
         <!-- Pie de tabla (Status) -->
         <div class="bg-[#F4F1EA] border-t-2 border-black p-2 flex-none flex justify-between items-center text-xs font-bold uppercase">
-            <span>Mostrando datos en vivo</span>
-            <span>OK - Conectado</span>
+            <span id="status-left">Esperando consulta</span>
+            <span id="status-right">—</span>
         </div>
     </div>
 
     <!-- Script -->
     <script>
-        function simulateWrapper() {
-            const loadingOverlay = document.getElementById('loading-overlay');
-            
-            // Mostrar carga
-            loadingOverlay.classList.remove('hidden');
-            loadingOverlay.classList.add('flex');
-            
-            // Limpiar campos
-            document.getElementById('name-input').value = '';
-            document.getElementById('tape-input').value = '';
+        const $ = (id) => document.getElementById(id);
+        let busy = false;
 
-            // Simular retraso
-            setTimeout(() => {
-                loadingOverlay.classList.add('hidden');
-                loadingOverlay.classList.remove('flex');
-            }, 1200);
+        function setBusy(on, text) {
+            busy = on;
+            const overlay = $('loading-overlay');
+            overlay.classList.toggle('hidden', !on);
+            overlay.classList.toggle('flex', on);
+            $('loading-text').textContent = text || '';
+            document.querySelectorAll('form button, #refresh-btn').forEach((b) => (b.disabled = on));
+        }
+
+        function status(left, right, isError) {
+            $('status-left').textContent = left;
+            $('status-right').textContent = right;
+            $('status-right').style.color = isError ? '#b91c1c' : '';
+        }
+
+        // Pregunta al servidor, que a su vez teclea en la aplicación legada y lee su pantalla.
+        async function call(url) {
+            const res = await fetch(url);
+            let data = {};
+            try { data = await res.json(); } catch (e) { /* respuesta sin JSON */ }
+            if (!res.ok) throw new Error(data.error || 'Error HTTP ' + res.status);
+            return data;
+        }
+
+        async function refreshCount() {
+            const el = $('count');
+            el.textContent = '…';
+            try {
+                el.textContent = (await call('/api/registros')).registros;
+                return true;
+            } catch (e) {
+                el.textContent = '?';
+                el.title = e.message;
+                return false;
+            }
+        }
+
+        function showRows(rows) {
+            const tbody = $('results-data');
+            tbody.replaceChildren();
+            rows.forEach((r, i) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b-2 border-black hover:bg-[#F4F1EA] transition-colors' + (i % 2 ? ' bg-white' : '');
+                const cells = [
+                    [r.numero, 'w-16 text-center font-bold'],
+                    [r.nombre, ''],
+                    [r.tipo, 'w-40 text-xs'],
+                    [r.cinta, 'w-20 text-center font-bold'],
+                    [r.registro, 'w-24 text-center'],
+                ];
+                cells.forEach(([text, cls], c) => {
+                    const td = document.createElement('td');
+                    td.className = 'py-2 px-3 ' + (c < 4 ? 'border-r-2 border-black ' : '') + cls;
+                    td.textContent = text;   // textContent: nunca se interpreta como HTML
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+        }
+
+        function showMessage(text, isError) {
+            $('results-data').replaceChildren();
+            const p = $('results-msg');
+            p.textContent = text;
+            p.style.color = isError ? '#b91c1c' : '';
+            p.classList.remove('hidden');
+        }
+
+        async function run(label, url, loadingText, onData) {
+            if (busy) return;
+            const t0 = performance.now();
+            setBusy(true, loadingText);
+            try {
+                const data = await call(url);
+                const rows = data.resultados || [];
+                $('results-msg').classList.add('hidden');
+                if (rows.length) showRows(rows); else showMessage(onData.empty, false);
+                const secs = ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',');
+                status(label + ': ' + rows.length + ' resultado' + (rows.length === 1 ? '' : 's'), 'OK · ' + secs + ' s', false);
+            } catch (e) {
+                showMessage('No se pudo consultar la aplicación legada: ' + e.message, true);
+                status(label, 'ERROR', true);
+            } finally {
+                setBusy(false);
+            }
+            refreshCount();   // el contador se vuelve a pedir a la aplicación legada tras cada operación
+        }
+
+        $('name-form').addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const name = $('name-input').value.trim().toUpperCase();
+            if (!name) return;
+            if (!/^[A-Z0-9 -]+$/.test(name)) {
+                showMessage('El nombre solo puede llevar letras sin acentos, números, espacios y guiones.', true);
+                return;
+            }
+            run('Programa «' + name + '»', '/api/programa?nombre=' + encodeURIComponent(name),
+                'Buscando «' + name + '» en la base de datos (puede tardar unos segundos)…',
+                { empty: 'No hay ningún programa con ese nombre.' });
+        });
+
+        $('tape-form').addEventListener('submit', (ev) => {
+            ev.preventDefault();
+            const id = $('tape-input').value.trim().toUpperCase();
+            if (!id) return;
+            if (!/^[A-Z0-9]{1,3}$/.test(id)) {
+                showMessage('La cinta es una letra (A-Z) o un número (0-n).', true);
+                return;
+            }
+            run('Cinta ' + id, '/api/cinta?id=' + encodeURIComponent(id),
+                'Recorriendo el listado completo para la cinta ' + id + ' (unos 25 segundos)…',
+                { empty: 'Ningún programa está grabado en la cinta ' + id + '.' });
+        });
+
+        $('refresh-btn').addEventListener('click', refreshCount);
+        refreshCount();   // al cargar la página
+
+        // Enlaces directos: /?nombre=FEUD  o  /?cinta=25  lanzan la búsqueda al abrir la página.
+        const params = new URLSearchParams(location.search);
+        if (params.get('nombre')) {
+            $('name-input').value = params.get('nombre');
+            $('name-form').requestSubmit();
+        } else if (params.get('cinta')) {
+            $('tape-input').value = params.get('cinta');
+            $('tape-form').requestSubmit();
         }
     </script>
 </body>
