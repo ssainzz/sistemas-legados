@@ -113,10 +113,11 @@ Copiar esta plantilla al final de cada problema nuevo:
 Guardarlas en una carpeta `capturas/` con el nombre indicado.
 
 ### Sistema legado
-- [ ] `01-menu-legado.png` — menú principal de la aplicación BASIC en DOSBox.
-- [ ] `02-opcion4-registros.png` — pantalla "CONTIENE 763 ARCHIVOS".
-- [ ] `03-opcion7-busqueda.png` — secuencia de búsqueda por nombre (pregunta "ES ESTE?").
-- [ ] `04-opcion6-listado.png` — una página del listado con el prompt "PULSA SPACE...".
+- [x] `01-menu-legado.png` — menú principal de la aplicación BASIC en DOSBox.
+- [x] `02-opcion4-registros.png` — pantalla "CONTIENE 763 ARCHIVOS".
+- [x] `03-opcion7-busqueda.png` — secuencia de búsqueda por nombre (pregunta "ES ESTE?").
+- [x] `04-opcion6-listado.png` — una página del listado con el prompt "PULSA SPACE...".
+- [x] `04a-opcion6-orden-antiguedad.png` — pantalla de inicio del listado, con "ORDENACION SEGUN EL CAMPO=ANTIGUEDAD".
 
 ### Proceso de desarrollo (intentos y fallos)
 - [ ] `05-error-falta-jar.png` — mensaje "Falta target\wrapper-legacy.jar".
