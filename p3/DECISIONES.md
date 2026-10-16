@@ -119,3 +119,33 @@ Formato: *había → decisión → motivo → coste*.
 ### D18. Se cerró el servidor que tenía abierto el usuario
 - **Motivo:** bloqueaba `target/wrapper-legacy.jar` y Maven no podía recompilar.
 - **Consecuencia:** hay que volver a lanzar `arrancar.bat`.
+
+---
+
+## 5. Web
+
+### D19. El contador de registros se vuelve a pedir tras cada operación
+- **Había:** una maqueta con el número 763 escrito a mano.
+- **Decisión:** `index.html` consulta `/api/registros` al cargar, con el botón de refrescar y automáticamente después de
+  cada búsqueda. No hay sondeo periódico.
+- **Motivo:** el plan pide que se consulte al sistema legado "en cada carga o refresco" sin cachear. Un sondeo
+  constante ocuparía el teclado y el único DOSBox, y retrasaría las búsquedas del usuario.
+- **Coste:** cada operación tarda unos 1-4 s más en el fondo (el contador se refresca al terminar, sin bloquear la tabla).
+
+### D20. Enlaces directos `?nombre=X` y `?cinta=Y`
+- **Había:** no existían.
+- **Decisión:** abrir la página con uno de esos parámetros lanza la búsqueda al cargar.
+- **Motivo:** permitió hacer capturas reproducibles de la web sin manejar el formulario a mano. Es un añadido menor.
+
+### D21. Validación en el navegador y mensajes de error
+- **Decisión:** el nombre admite A-Z, 0-9, espacio y guion (lo que el robot sabe teclear); la cinta, 1 a 3 caracteres
+  A-Z/0-9. Los errores del servidor se muestran en la tabla en vez de fallar en silencio. Los formularios se
+  desactivan mientras hay una operación en curso (solo hay un DOSBox).
+- **Coste:** no se pueden buscar nombres con acentos, ñ o signos. El servidor responde 400 en ese caso.
+
+### D22. La API devuelve también la columna REGISTRO
+- **Había:** el JSON solo traía número, nombre, tipo y cinta.
+- **Motivo:** el listado de la aplicación original muestra esa columna y la web debe parecerse a ella.
+
+### D23. Las capturas de la web se recortan al contenido de la página
+- **Motivo:** las capturas de ventana completa incluían los marcadores y la barra lateral personales del navegador.
