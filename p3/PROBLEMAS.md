@@ -73,6 +73,53 @@ Formato de cada entrada: **síntoma → causa → solución → estado**.
     - Causa: Tess4J usa SLF4J y no hay implementación de logging en el proyecto.
     - Solo muestra mensajes en consola; no afecta al funcionamiento. No requiere acción.
 
+### Primeras pruebas contra DOSBox (16/10/2026)
+
+12. **El wrapper capturaba otra parte de la pantalla (VS Code en vez de DOSBox)**
+    - Síntoma: `calibrar` devolvía texto mezclado con el de otras ventanas; la imagen mostraba el editor.
+    - Causa 1, escalado: la pantalla va al 150 % (2240×1400 físicos, 1493×933 lógicos). Windows/JNA dan la
+      posición de DOSBox en píxeles físicos pero `Robot` interpreta las coordenadas como lógicas, así que la zona de
+      captura salía desplazada.
+    - Causa 2, foco: `SetForegroundWindow` no trae la ventana al frente si el proceso que la pide está en segundo
+      plano, y DOSBox quedó tapado.
+    - Solución 1: `System.setProperty("sun.java2d.uiScale", "1")` al inicio de `Main`, para que Java use píxeles 1:1.
+    - Solución 2: en `DosboxWindow.focus()` se simula un toque de Alt (`keybd_event`) antes de pedir el foco y se
+      reintenta hasta comprobar que DOSBox es la ventana activa.
+    - Estado: resuelto. Ahora captura 640×400 correctos.
+
+13. **`UnsupportedClassVersionError` al ejecutar con `java -jar` desde Git Bash**
+    - Causa: desde esa terminal el `PATH` no recogía el JDK 22 y se usó el Java 8.
+    - Solución: llamar al ejecutable por su ruta completa, `C:\Program Files\OpenJDK\jdk-22.0.2\bin\java.exe`.
+    - Estado: resuelto (las pruebas se lanzan con la ruta completa).
+
+14. **`mvn package` no recompilaba y daba "Unresolved compilation problems"**
+    - Causa: la extensión de Java de VS Code compila en `target/classes` mientras se edita (con el compilador de
+      Eclipse) y deja clases a medias que Maven reutiliza.
+    - Solución: `mvn clean package`.
+    - Estado: resuelto.
+
+15. **`mvn clean` falla: "Failed to delete target\wrapper-legacy.jar"**
+    - Causa: el servidor de la prueba anterior seguía abierto y tenía el `.jar` bloqueado (Windows no deja borrar
+      ficheros en uso).
+    - Solución: cerrar ese proceso `java` antes de recompilar.
+    - Estado: resuelto. Hay que cerrar el servidor siempre antes de recompilar.
+
+16. **El OCR de Tesseract comete errores y rompe el caso de uso 2 (búsqueda por nombre)**
+    - Síntoma: `programa FEUD` falla con "Pantalla inesperada (se esperaba 'SABES EL NUMERO')". El OCR leyó
+      "SABES EL NUNERO DE REGISTRO OUE OUIERES BUSCARC7 ISZNI N".
+    - Errores vistos en el menú con la configuración por defecto (escala 2, sin binarizar): `-` leído como `M`,
+      `M E N U` como `N E N U`, `INFORMACION` como `INFORPHCION`, `IMPRIMIR` como `INPRINIR`, `8` como `O`.
+    - Qué funciona: el caso de uso 1 (`contar`) devuelve 763 en unos 4 s, porque solo necesita una palabra y un número
+      y ambos salen bien.
+    - Estado: **sin resolver**. Hay que medir las variantes de Tesseract y, si no llegan al 100 %, sustituir el OCR por
+      otro método (el enunciado lo permite: "todo vale excepto cambiar la aplicación legada").
+
+17. **Tras un fallo del wrapper, DOSBox queda a mitad de una pregunta y la siguiente ejecución no se recupera**
+    - Síntoma: "La aplicacion legada no esta en el menu y no se pudo recuperar".
+    - Causa: `recoverToMenu()` solo pulsa Enter, y en la pregunta "¿SABES EL NUMERO...? (S/N)" Enter no hace nada.
+    - Solución provisional: salir a mano con N, un nombre inexistente, Enter y N.
+    - Estado: **sin resolver** en el código. La recuperación debe contemplar las preguntas S/N.
+
 ---
 
 ## 2. Riesgos detectados pero que aún no se han comprobado
