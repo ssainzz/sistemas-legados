@@ -114,7 +114,11 @@ Formato de cada entrada: **síntoma → causa → solución → estado**.
     - Intento que no funcionó: Tesseract con escala 2 sin binarizar (la configuración por defecto del esqueleto).
     - Solución: lector por plantillas de carácter (`GlyphReader`), ver el problema 18. Tesseract se mantiene como
       motor alternativo (`ocr.engine=tesseract`) para poder medirlo y compararlo en la memoria.
-    - Estado: resuelto con el lector por plantillas. **Pendiente:** medir las variantes de Tesseract para la memoria.
+    - Medido (`ocr-resultados.md`, comando `bench`, 10 variantes): la mejor (escala 2, binarizado 128) acierta el 95,2 % de
+      los caracteres, pero solo 265 de 763 registros exactos (35 %) y ninguna de las 43 páginas sale sin errores. Ampliar
+      la imagen no ayuda: escala 3 y 4 empeoran (90-94 %). Errores típicos: `TURRO ESPRIT`, `Q-25` leído como `0625`,
+      `PINGMPONG`, filas enteras perdidas (captura `13`).
+    - Estado: resuelto con el lector por plantillas.
 
 17. **Tras un fallo del wrapper, DOSBox queda a mitad de una pregunta y la siguiente ejecución no se recupera**
     - Síntoma: "La aplicacion legada no esta en el menu y no se pudo recuperar".
