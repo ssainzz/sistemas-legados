@@ -1,22 +1,37 @@
-# Práctica 3 – Wrapper web para la aplicación BASIC/MS-DOS (esqueleto)
+# Práctica 3 – Wrapper web para la aplicación BASIC/MS-DOS
 
-Java 17 + Maven. `java.awt.Robot` (teclado y captura) + Tess4J (OCR) + `com.sun.net.httpserver`.
+Java 17+ y Maven. `java.awt.Robot` (teclado y captura) + lector de pantalla por plantillas (y Tess4J como motor
+alternativo) + `com.sun.net.httpserver`.
+
+Documentos de trabajo: [`PROBLEMAS.md`](PROBLEMAS.md) (problemas y capturas para la memoria) y
+[`DECISIONES.md`](DECISIONES.md) (qué se hizo distinto al esqueleto, al plan o al enunciado).
+
+## Cómo ejecutarlo
+
+1. Tener instalado **Java 17 o superior** (el `.bat` busca un JDK en `Program Files`).
+2. Doble clic en **`arrancar.bat`**: abre DOSBox con la aplicación, arranca el servidor y abre el navegador en
+   `http://localhost:8090/`.
+3. No tocar teclado ni ratón mientras la web muestra "RPA & OCR Ejecutándose": el robot escribe en DOSBox.
+
+Si falta `target\wrapper-legacy.jar`, compilar con `mvn clean package` (hace falta cerrar antes el servidor).
 
 ## Estructura
 
 | Fichero | Función |
 |---|---|
-| `Main` | Servidor web y comandos de prueba por consola (`calibrar`, `contar`, `programa X`, `cinta X`) |
-| `LegacyService` | Los 3 casos de uso: secuencias de teclas + lectura de pantalla + lock |
+| `Main` | Servidor web y comandos de consola (`calibrar`, `corpus`, `contar`, `programa X`, `cinta X`) |
+| `LegacyService` | Los 3 casos de uso: teclas + espera de la pantalla esperada + lock + recuperación al menú |
 | `KeyboardDriver` | Robot: tecla a tecla, Shift explícito, solo A-Z 0-9 espacio `-` |
-| `ScreenReader` | Captura, espera de cambio/estabilidad, preprocesado y OCR con reintentos |
-| `ScreenParser` | Texto OCR → datos (sin pantalla; tiene tests) |
-| `DosboxWindow` | Localiza la ventana de DOSBox (JNA), la enfoca y da su área cliente |
+| `ScreenReader` | Captura, espera (`captureUntil`) y lectura con el motor elegido (`ocr.engine`) |
+| `GlyphReader` | **Motor por defecto**: compara cada celda de 8×16 px con su carácter (`src/main/resources/font8x16.txt`) |
+| `ScreenParser` | Texto de pantalla → datos (con tests) |
+| `DosboxWindow` | Localiza la ventana de DOSBox (JNA), la pone al frente y da su área cliente |
 | `WebServer` | `/api/registros`, `/api/programa?nombre=`, `/api/cinta?id=` y estáticos |
-| `config.properties` | Retardos, zona de captura, OCR, puerto |
+| `index.html` | Interfaz web conectada a la API |
+| `config.properties` | Retardos, zona de captura, motor de lectura, puerto |
 | `arrancar.bat` | Doble clic: DOSBox + servidor + navegador |
-
-`index.html` (la maqueta) **no se ha tocado**: aún tiene datos fijos y no llama a la API.
+| `corpus/` | Pantallas reales de DOSBox (menú, mensajes y las 43 páginas del listado) usadas por los tests |
+| `capturas/` | Capturas para la memoria (lista en `PROBLEMAS.md`, sección 4) |
 
 ## Secuencias verificadas a mano en la aplicación
 
@@ -24,18 +39,35 @@ Menú (sin Enter): `4` info · `6` listar · `7` buscar. Las respuestas S/N van 
 
 1. **Registros**: `4` → "CONTIENE 763 ARCHIVOS" → Enter.
 2. **Programa por nombre**: `7` → `N`⏎ → `NOMBRE`⏎ → "ES ESTE?" `S`⏎ → "ALTERAR?" `N`⏎ → "BUSCAR MÁS?" `N`⏎.
-3. **Cinta**: `6` → ⏎ (desde el principio) → listado por ANTIGÜEDAD, 18 filas/página, `ESPACIO` para seguir, otra tecla para acabar.
-   Columnas Nº, NOMBRE, TIPO, CINTA, REGISTRO. Cinta múltiple = `B-E`. Filtrar por pertenencia, no por subcadena.
+3. **Cinta**: `6` → ⏎ (desde el principio) → listado por ANTIGÜEDAD, 18 filas/página, `ESPACIO` para seguir, otra tecla
+   para acabar. La última página (registros 757 a 763) sigue mostrando el aviso y cualquier tecla vuelve al menú.
+   Columnas Nº, NOMBRE, TIPO, CINTA, REGISTRO. Cinta múltiple = `B-E`. Se filtra por pertenencia, no por subcadena.
 
 Nunca usar las opciones 1, 2, 3 ni 5 del menú (modifican/imprimen datos).
 
-## Pendiente (TODO)
+## Estado
 
-- [ ] Compilar (`mvn package`) y ejecutar `calibrar` con DOSBox abierto; ajustar `ocr.*` y la zona de captura.
-- [ ] Medir precisión del OCR por variante (escala, binarizado, invertir) → memoria.
-- [ ] Verificar el final del listado (última página) y nombres repetidos / búsqueda por subcadena.
-- [ ] Escalado de pantalla ≠ 100 %: comprobar coordenadas ventana vs Robot.
-- [ ] Conectar `index.html` con la API (`fetch`), mostrar el contador siempre visible.
+### Hecho
+- [x] Compilar (`mvn clean package`) y ejecutar contra DOSBox.
+- [x] Calibrar la zona de captura (640×400, área cliente de DOSBox).
+- [x] Escalado de pantalla ≠ 100 %: resuelto (`sun.java2d.uiScale=1`); probado al 150 %.
+- [x] Foco de DOSBox: se pone al frente solo.
+- [x] Lectura de pantalla exacta (lector por plantillas): los 763 registros sin errores.
+- [x] Final del listado verificado.
+- [x] Los tres casos de uso por consola y por la API (registros, programa, cinta con cintas múltiples).
+- [x] Peticiones simultáneas: se atienden de una en una sin mezclarse.
+- [x] Recuperación al menú tras un fallo.
+- [x] Conectar `index.html` con la API; contador de registros consultado al legado en cada carga y operación.
+- [x] Probar `arrancar.bat` con doble clic (en el PC de Daniel, 16/10/2026).
+- [x] `target/` y `debug/` en el `.gitignore`.
+- [x] Capturas 01-04 (legado) y 16-21 (web).
+
+### Pendiente
+- [ ] Medir la precisión de Tesseract por variante (escala, binarizado, invertir) → tabla para la memoria.
+- [ ] Capturas del OCR (10-15), de `arrancar.bat` (22) y de la comparación legado/web (23).
+- [ ] Nombres repetidos y búsqueda por subcadena en la opción 7 (la aplicación pregunta "ES ESTE?" por cada uno).
 - [ ] Config propia de DOSBox con `-conf` (hoy usa la de `%LOCALAPPDATA%\DOSBox`) y ventana a posición/tamaño fijos.
-- [ ] Probar `arrancar.bat` en un Windows limpio; memoria (4-5 págs.): pasos, fallos, OCR, capturas, reparto y horas.
-- [ ] Añadir `target/` y `debug/` al `.gitignore`.
+- [ ] Probar `arrancar.bat` en un Windows limpio.
+- [ ] La web carga Tailwind y las fuentes desde internet: valorar incluirlas en local.
+- [ ] Memoria (4-5 págs.): pasos, fallos, OCR, capturas, reparto de tareas y horas.
+- [ ] Empaquetar `SL-P3-nn.zip` incluyendo `target\wrapper-legacy.jar` ya compilado.
