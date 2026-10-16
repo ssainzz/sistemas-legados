@@ -34,7 +34,7 @@ public final class Config {
         ocrScale = i(p, "ocr.scale", 2);
         ocrBinarize = i(p, "ocr.binarize", 0);
         ocrInvert = Boolean.parseBoolean(p.getProperty("ocr.invert", "false"));
-        port = i(p, "server.port", 8080);
+        port = i(p, "server.port", 8090);
         webRoot = Path.of(p.getProperty("web.root", ".")).toAbsolutePath().normalize();
         debugSave = Boolean.parseBoolean(p.getProperty("debug.save", "false"));
         debugDir = Path.of(p.getProperty("debug.dir", "debug"));
