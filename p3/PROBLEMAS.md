@@ -196,8 +196,10 @@ Se mueven a la sección 1 cuando se confirmen.
 - **Nombres repetidos y búsqueda por subcadena** en la opción 7 del programa legado.
 - **Caracteres no soportados:** `KeyboardDriver` solo escribe A-Z, 0-9, espacio y `-`.
 - **Foco y ventana encima:** si otra ventana toma el foco mientras el robot escribe, las teclas van a otro programa.
-- **`index.html` sigue con datos fijos:** no llama a la API.
+- ~~`index.html` con datos fijos~~ Resuelto: ahora llama a la API.
 - **Windows limpio:** falta probar con Java, DLL nativas de Tess4J y rutas relativas.
+- **La web carga Tailwind y las fuentes desde internet** (`cdn.tailwindcss.com`, Google Fonts). Sin conexión se vería sin
+  estilos. Si el PC de corrección no tiene red habría que incluir esos ficheros en local.
 
 ---
 
@@ -245,12 +247,12 @@ Guardarlas en una carpeta `capturas/` con el nombre indicado.
 - [ ] `15-calibrar.png` — salida del comando `calibrar` con la zona de captura.
 
 ### Aplicación terminada
-- [ ] `16-web-inicio.png` — web con el contador de registros visible.
-- [ ] `17-web-busqueda-nombre.png` — resultado de buscar un programa por nombre.
-- [ ] `18-web-nombre-inexistente.png` — mensaje cuando el programa no existe.
-- [ ] `19-web-cinta-simple.png` — resultado de una cinta, por ejemplo `A`.
-- [ ] `20-web-cinta-multiple.png` — resultado donde aparece un programa con cinta múltiple, por ejemplo `A-45`.
-- [ ] `21-web-con-dosbox.png` — web y DOSBox visibles a la vez, para ver al robot trabajando.
+- [x] `16-web-inicio.png` — web con el contador de registros visible.
+- [x] `17-web-busqueda-nombre.png` — resultado de buscar un programa por nombre.
+- [x] `18-web-nombre-inexistente.png` — mensaje cuando el programa no existe.
+- [x] `19-web-cinta-simple.png` — resultado de una cinta, por ejemplo `A`.
+- [x] `20-web-cinta-multiple.png` — resultado donde aparece un programa con cinta múltiple, por ejemplo `A-45`.
+- [x] `21-web-con-dosbox.png` — web y DOSBox visibles a la vez, para ver al robot trabajando.
 - [ ] `22-arrancar-bat.png` — ventana de consola de `arrancar.bat` con todo arrancado.
 - [ ] `23-comparacion-legado-web.png` — misma consulta en la app original y en la web, lado a lado.
 
