@@ -63,8 +63,9 @@ Nunca usar las opciones 1, 2, 3 ni 5 del menú (modifican/imprimen datos).
 - [x] Capturas 01-04 (legado) y 16-21 (web).
 
 ### Pendiente
-- [ ] Medir la precisión de Tesseract por variante (escala, binarizado, invertir) → tabla para la memoria.
-- [ ] Capturas del OCR (10-15), de `arrancar.bat` (22) y de la comparación legado/web (23).
+- [x] Medir la precisión de Tesseract por variante (`ocr-resultados.md`, comando `bench`): mejor 95,2 % de caracteres, 35 % de filas exactas.
+- [x] Capturas del OCR (10-15) y de la comparación legado/web (23).
+- [ ] Captura de `arrancar.bat` (22): la ventana de comandos, tras un doble clic.
 - [ ] Nombres repetidos y búsqueda por subcadena en la opción 7 (la aplicación pregunta "ES ESTE?" por cada uno).
 - [ ] Config propia de DOSBox con `-conf` (hoy usa la de `%LOCALAPPDATA%\DOSBox`) y ventana a posición/tamaño fijos.
 - [ ] Probar `arrancar.bat` en un Windows limpio.

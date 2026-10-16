@@ -25,7 +25,9 @@ Formato: *había → decisión → motivo → coste*.
 - **Había:** Tesseract era el único motor.
 - **Decisión:** se mantiene seleccionable con `ocr.engine=tesseract`.
 - **Motivo:** la memoria pide los resultados de las distintas técnicas de OCR y los intentos que no funcionaron.
-- **Pendiente:** medir sus variantes sobre el corpus (los 763 registros ya leídos sirven como verdad de referencia).
+- **Resultado:** se midieron 10 variantes (`ocr-resultados.md`). La mejor acierta el 95,2 % de los caracteres, pero solo 265 de
+  763 registros exactos (35 %) y ninguna de las 43 páginas sale sin errores. Con el defecto del esqueleto (escala 2 sin
+  binarizar): 95,0 % de caracteres y 54 de 169 filas de la muestra.
 
 ### D3. El catálogo de caracteres se construyó a mano a partir de pantallas reales
 - **Decisión:** se capturó el listado completo (`corpus`), se agruparon las celdas distintas y se les puso nombre

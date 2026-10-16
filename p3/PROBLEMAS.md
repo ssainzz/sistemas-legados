@@ -238,13 +238,13 @@ Guardarlas en una carpeta `capturas/` con el nombre indicado.
 - [ ] `09-build-success.png` — `BUILD SUCCESS` de Maven.
 
 ### OCR (lo que más pesa en la memoria)
-- [ ] `10-captura-cruda.png` — imagen capturada por el `Robot` antes de procesar.
-- [ ] `11-captura-preprocesada.png` — la misma imagen tras escalar, binarizar o invertir.
-- [ ] `12-ocr-texto-bueno.png` — texto del OCR sin errores.
-- [ ] `13-ocr-texto-con-errores.png` — texto con errores típicos (confusión de caracteres), junto con la imagen original.
-- [ ] `14-tabla-comparativa-ocr.png` — tabla con la precisión de cada configuración (escala, binarizado, invertir). Se
+- [x] `10-captura-cruda.png` — imagen capturada por el `Robot` antes de procesar.
+- [x] `11-captura-preprocesada.png` — la misma imagen tras escalar, binarizar o invertir.
+- [x] `12-ocr-texto-bueno.png` — texto leído sin errores por el lector por plantillas (motor final): captura y texto lado a lado.
+- [x] `13-ocr-texto-con-errores.png` — texto con errores típicos (confusión de caracteres), junto con la imagen original.
+- [x] `14-tabla-comparativa-ocr.png` — tabla con la precisión de cada configuración (escala, binarizado, invertir). Se
       puede hacer una tabla en la memoria en vez de captura.
-- [ ] `15-calibrar.png` — salida del comando `calibrar` con la zona de captura.
+- [x] `15-calibrar.png` — salida del comando `calibrar` con la zona de captura.
 
 ### Aplicación terminada
 - [x] `16-web-inicio.png` — web con el contador de registros visible.
@@ -254,7 +254,7 @@ Guardarlas en una carpeta `capturas/` con el nombre indicado.
 - [x] `20-web-cinta-multiple.png` — resultado donde aparece un programa con cinta múltiple, por ejemplo `A-45`.
 - [x] `21-web-con-dosbox.png` — web y DOSBox visibles a la vez, para ver al robot trabajando.
 - [ ] `22-arrancar-bat.png` — ventana de consola de `arrancar.bat` con todo arrancado.
-- [ ] `23-comparacion-legado-web.png` — misma consulta en la app original y en la web, lado a lado.
+- [x] `23-comparacion-legado-web.png` — misma consulta en la app original y en la web, lado a lado.
 
 ### Vídeo (opcional pero recomendado por el enunciado)
 - [ ] Grabación corta (1-2 min) de un doble clic en `arrancar.bat` y de las tres operaciones desde el navegador.
