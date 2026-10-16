@@ -26,6 +26,9 @@ public final class ScreenParser {
             "UTILIDAD", "ARCADE", "CONVERSACIONAL", "VIDEOAVENTURA",
             "SIMULADOR", "JUEGO DE MESA", "S. DEPORTIVO", "ESTRATEGIA");
 
+    /** Lo que muestra el listado cuando un programa no tiene tipo. */
+    public static final String SIN_TIPO = "---";
+
     private static final Pattern CINTA_OK = Pattern.compile("[A-Z0-9]+(?:-[A-Z0-9]+)*");
     private static final Pattern COUNT = Pattern.compile("CONT\\w*\\s+(\\d+)\\s+ARCH\\w*");
     private static final Pattern SINGLE = Pattern.compile("^(\\d{1,3})\\s*-\\s*(.+?)\\s+CINTA\\s*:\\s*(\\S+)\\s*$");
@@ -123,6 +126,10 @@ public final class ScreenParser {
     /** "ARCADE" al final de "HUNCHBACK ARCADE" -> {"HUNCHBACK", "ARCADE"}; tolera 1-2 errores de OCR. */
     static String[] splitNameAndType(String middle) {
         String m = middle.trim().toUpperCase();
+        // Hay programas sin tipo definido: la aplicacion muestra "---" en esa columna.
+        if (m.endsWith(" " + SIN_TIPO) && m.length() > SIN_TIPO.length() + 1) {
+            return new String[]{m.substring(0, m.length() - SIN_TIPO.length()).trim(), SIN_TIPO};
+        }
         String bestType = null;
         int bestDist = Integer.MAX_VALUE, bestCut = -1;
         for (String t : TIPOS) {
