@@ -11,7 +11,7 @@ public final class Config {
     public final String windowTitlePrefix;
     public final int captureX, captureY, captureW, captureH;
     public final int keyDelayMs, pollIntervalMs, changeTimeoutMs, stableTimeoutMs;
-    public final String tessdataPath, ocrLanguage;
+    public final String tessdataPath, ocrLanguage, ocrEngine;
     public final int ocrScale, ocrBinarize;
     public final boolean ocrInvert;
     public final int port;
@@ -30,6 +30,7 @@ public final class Config {
         changeTimeoutMs = i(p, "change.timeout.ms", 4000);
         stableTimeoutMs = i(p, "stable.timeout.ms", 5000);
         tessdataPath = p.getProperty("tessdata.path", ".");
+        ocrEngine = p.getProperty("ocr.engine", "glyph");
         ocrLanguage = p.getProperty("ocr.language", "spa");
         ocrScale = i(p, "ocr.scale", 2);
         ocrBinarize = i(p, "ocr.binarize", 0);
