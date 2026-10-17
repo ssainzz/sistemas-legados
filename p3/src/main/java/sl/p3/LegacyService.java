@@ -67,9 +67,10 @@ public final class LegacyService {
      * Opcion 7 -> N + Enter -> NOMBRE + Enter -> (ES ESTE?) S + Enter -> (ALTERAR?) N + Enter ->
      * (BUSCAR MAS?) N + Enter -> menu.   Si no existe: aviso + Enter -> (BUSCAR MAS?) N -> menu.
      *
-     * TODO: si hay varios programas con el mismo nombre (o la busqueda es por subcadena) la
-     * aplicacion pregunta "ES ESTE?" por cada uno; responder N pasa al siguiente. Verificar con
-     * nombres repetidos y devolver todos. TODO: nombres con caracteres no soportados por KeyboardDriver.
+     * Comprobado a mano: la aplicacion distingue mayusculas y busca el texto en cualquier parte del
+     * nombre ("MONTY" encuentra tambien "AUF WIEDERSEHEN MONTY"). Con varios resultados pregunta
+     * "ES ESTE?" por cada uno; N pasa al siguiente y, tras el ultimo, sale "NO HAY NINGUN PROGRAMA".
+     * TODO: devolver todos los resultados (PENDIENTE.md 1.4) y no pasar el nombre a mayusculas (1.3).
      */
     public Optional<ProgramRecord> buscarPorNombre(String nombre) {
         String name = nombre.trim().toUpperCase();

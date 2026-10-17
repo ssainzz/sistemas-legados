@@ -184,6 +184,36 @@ Formato de cada entrada: **síntoma → causa → solución → estado**.
     - Solución: no usar Python; las tareas auxiliares se hacen con Java (`java Fichero.java`) o PowerShell.
     - Estado: resuelto.
 
+### Búsqueda por nombre (17/10/2026)
+
+25. **La búsqueda por nombre solo funcionaba con el nombre exacto, en mayúsculas y con un único resultado**
+    - Comprobado a mano en DOSBox (opción 7):
+      - La búsqueda **distingue mayúsculas**. El wrapper pasaba el nombre a mayúsculas, así que `FRIDAY 13th` no se
+        encontraba.
+      - Busca el texto **en cualquier parte del nombre**: `MONTY` encuentra los que empiezan por MONTY y también, por
+        ejemplo, "AUF WIEDERSEHEN MONTY".
+      - Con varios resultados muestra el primero y pregunta "ES ESTE?". Con `N` muestra el siguiente y vuelve a
+        preguntar; tras el último sale "NO HAY NINGUN PROGRAMA CON ESTE NOMBRE PULSA ENTER".
+    - Datos reales (`DATOS.DAT`): 5 nombres repetidos (`DEFENDER`, `GALLIPOLI`, `MONTY ON THE RUN`, `STREET HAWK`,
+      `STRIP POKER`) y 2 con minúsculas (`BARRY McGUIGAN'S BOXING`, `FRIDAY 13th`). El wrapper respondía `S` al
+      primer "ES ESTE?" y devolvía solo ese.
+    - Solución: `PENDIENTE.md`, puntos 1.3 y 1.4.
+    - Estado: pendiente.
+
+26. **45 nombres no se podían buscar porque el robot no sabía escribir sus signos**
+    - Síntoma: el robot solo escribía A-Z, 0-9, espacio y `-`. En `DATOS.DAT` hay 45 nombres con `'` (30), `.` (21),
+      `!` (2) o `&` (2), por ejemplo `KNIGHT'S LORE`, `EVERYONE'S A WALLY` (sale en la figura del enunciado),
+      `B.C. BILL` y `N.O.M.A.D.`.
+    - Causa: esos signos no están en la misma tecla en todas las distribuciones (el apóstrofo está junto al 0 en el
+      teclado español y junto al Enter en el inglés), y `Robot` traduce sus códigos de tecla de forma distinta según la
+      distribución, así que no se puede fijar una tecla.
+    - Solución: para los signos se pregunta a Windows qué tecla, y si lleva Shift, produce el carácter en la
+      distribución actual (`VkKeyScanW`), y se pulsa con su código de exploración (`MapVirtualKeyW` + `keybd_event`),
+      que es lo que lee DOSBox. DOSBox usa la misma distribución que Windows (`keyboardlayout=auto`). Las letras,
+      números y espacio siguen yendo con `Robot`. Test `KeyboardDriverTest`: los 763 nombres se pueden escribir.
+    - Estado: resuelto. Probado en DOSBox: `KNIGHT'S LORE`, `B.C. BILL`, `N.O.M.A.D`, `WHAM! THE MUSIC BOX` y
+      `OLLI & LISSA` se escriben bien y se encuentran.
+
 
 ---
 
@@ -197,8 +227,8 @@ Se mueven a la sección 1 cuando se confirmen.
 - **El OCR no llega al 100 %:** el enunciado ya lo avisa. Aún no hay medidas de precisión.
 - ~~**Fin del listado por cinta**~~ Resuelto: la última página (registros 757 a 763) sigue mostrando "PULSA SPACE" y
   cualquier tecla vuelve al menú.
-- **Nombres repetidos y búsqueda por subcadena** en la opción 7 del programa legado.
-- **Caracteres no soportados:** `KeyboardDriver` solo escribe A-Z, 0-9, espacio y `-`.
+- ~~**Nombres repetidos y búsqueda por subcadena** en la opción 7 del programa legado.~~ Comprobado: problema 25.
+- ~~**Caracteres no soportados:** `KeyboardDriver` solo escribe A-Z, 0-9, espacio y `-`.~~ Problema 26.
 - **Foco y ventana encima:** si otra ventana toma el foco mientras el robot escribe, las teclas van a otro programa.
 - ~~`index.html` con datos fijos~~ Resuelto: ahora llama a la API.
 - **Windows limpio:** falta probar con Java, DLL nativas de Tess4J y rutas relativas.

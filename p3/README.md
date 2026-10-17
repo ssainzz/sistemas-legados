@@ -21,7 +21,7 @@ Si falta `target\wrapper-legacy.jar`, compilar con `mvn clean package` (hace fal
 |---|---|
 | `Main` | Servidor web y comandos de consola (`calibrar`, `corpus`, `contar`, `programa X`, `cinta X`) |
 | `LegacyService` | Los 3 casos de uso: teclas + espera de la pantalla esperada + lock + recuperación al menú |
-| `KeyboardDriver` | Robot: tecla a tecla, Shift explícito, solo A-Z 0-9 espacio `-` |
+| `KeyboardDriver` | Robot: tecla a tecla, Shift explícito. Letras, números, espacio y los signos `- ' . ! &` (estos según la distribución de teclado de Windows) |
 | `ScreenReader` | Captura, espera (`captureUntil`) y lectura con el motor elegido (`ocr.engine`) |
 | `GlyphReader` | **Motor por defecto**: compara cada celda de 8×16 px con su carácter (`src/main/resources/font8x16.txt`) |
 | `ScreenParser` | Texto de pantalla → datos (con tests) |
@@ -39,6 +39,10 @@ Menú (sin Enter): `4` info · `6` listar · `7` buscar. Las respuestas S/N van 
 
 1. **Registros**: `4` → "CONTIENE 763 ARCHIVOS" → Enter.
 2. **Programa por nombre**: `7` → `N`⏎ → `NOMBRE`⏎ → "ES ESTE?" `S`⏎ → "ALTERAR?" `N`⏎ → "BUSCAR MÁS?" `N`⏎.
+   La búsqueda **distingue mayúsculas** y encuentra el texto **en cualquier parte del nombre** (`MONTY` encuentra
+   también "AUF WIEDERSEHEN MONTY"). Con varios resultados muestra uno y pregunta "ES ESTE?": con `N`⏎ pasa al
+   siguiente, y tras el último sale "NO HAY NINGUN PROGRAMA CON ESTE NOMBRE PULSA ENTER" → ⏎ → "BUSCAR MÁS?" `N`⏎.
+   `DEFENDER` da 2 resultados (uno por cinta).
 3. **Cinta**: `6` → ⏎ (desde el principio) → listado por ANTIGÜEDAD, 18 filas/página, `ESPACIO` para seguir, otra tecla
    para acabar. La última página (registros 757 a 763) sigue mostrando el aviso y cualquier tecla vuelve al menú.
    Columnas Nº, NOMBRE, TIPO, CINTA, REGISTRO. Cinta múltiple = `B-E`. Se filtra por pertenencia, no por subcadena.

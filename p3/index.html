@@ -255,8 +255,8 @@
             ev.preventDefault();
             const name = $('name-input').value.trim().toUpperCase();
             if (!name) return;
-            if (!/^[A-Z0-9 -]+$/.test(name)) {
-                showMessage('El nombre solo puede llevar letras sin acentos, números, espacios y guiones.', true);
+            if (!/^[A-Z0-9 \-'.!&]+$/.test(name)) {
+                showMessage('El nombre solo puede llevar letras sin acentos, números, espacios y los signos - \' . ! &', true);
                 return;
             }
             run('Programa «' + name + '»', '/api/programa?nombre=' + encodeURIComponent(name),
