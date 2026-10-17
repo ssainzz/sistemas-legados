@@ -226,3 +226,42 @@ cualquier parte del nombre y enseña los resultados de uno en uno preguntando "E
   comprueba que Nº = REGISTRO en cada fila) y en la búsqueda por nombre solo hay un número. Repetirlo confundía.
 - **Coste:** ninguno en los datos: la API sigue devolviendo `numero` y `registro`. Si algún día el orden no fuera
   ANTIGÜEDAD, la web dejaría de enseñar la posición en el listado; hoy eso ya se trata como error (D11).
+
+---
+
+## 7. Arranque con doble clic (17/10/2026)
+
+### D31. Configuración propia de DOSBox (`dosbox-wrapper.conf`) pasada con `-conf`
+- **Había:** `arrancar.bat` llamaba a `Database-MSDOS\database.bat`, y DOSBox usaba la configuración del usuario
+  (`%LOCALAPPDATA%\DOSBox\dosbox-0.74.conf`), distinta en cada PC.
+- **Decisión:** `arrancar.bat` ejecuta la misma orden que `database.bat`
+  (`DOSBox-0.74\DOSBox.exe Database\gwbasic.bat -noconsole`, desde la carpeta `Database-MSDOS`) añadiendo
+  `-conf dosbox-wrapper.conf`. Ese fichero está en `p3/`, fuera de la carpeta de la aplicación, y fija los valores que
+  DOSBox genera por defecto (ventana, `windowresolution=original`, `output=surface`, `scaler=normal2x`,
+  `machine=svga_s3`, `usescancodes=true`, `keyboardlayout=auto`).
+- **Motivo:** el lector por plantillas exige un área cliente de exactamente 640×400, y el robot depende de
+  `keyboardlayout=auto` y `usescancodes=true` (D24). Con la configuración del usuario, cualquiera de esos valores
+  podría ser otro. Se copian los valores por defecto porque son con los que se construyó y probó el lector.
+  Aunque el ZIP incluye DOSBox, su configuración no viaja con él: sin `-conf`, DOSBox 0.74 lee (o crea) la del perfil
+  del usuario, como muestra `Database-MSDOS/stdout.txt`. En un PC que ya tenga DOSBox configurado de otra forma, el
+  wrapper fallaría. Con `-conf` tampoco se crea nada fuera de la carpeta de la práctica.
+- **Alternativas descartadas:** modificar `database.bat` o poner un `dosbox.conf` dentro de `Database-MSDOS` (el
+  enunciado no deja tocar esa carpeta), y seguir llamando a `database.bat` (no admite argumentos).
+- **Coste:** `arrancar.bat` repite la orden de `database.bat`; si esta cambiase, habría que copiarla. Con `-conf`,
+  DOSBox ya no lee la configuración del usuario, así que sus ajustes personales (por ejemplo, el sonido) no se aplican.
+
+### D32. Sin pausas fijas: el wrapper espera a DOSBox y Java abre el navegador
+- **Había:** `arrancar.bat` esperaba 6 s fijos a que arrancase DOSBox y abría el navegador 3 s después de lanzar Java,
+  con la URL escrita en el `.bat`.
+- **Decisión:**
+  - `arrancar.bat` lanza DOSBox y el servidor sin esperar.
+  - `DosboxWindow.focus()` espera hasta 20 s a que aparezca la ventana de DOSBox.
+  - La primera operación (`LegacyService.begin`) espera hasta 20 s a que aparezca el menú antes de intentar
+    recuperarlo; las siguientes no esperan.
+  - El servidor abre el navegador él mismo (`servidor --abrir`, con `Desktop.browse`) cuando ya está escuchando, con el
+    puerto de `config.properties`.
+- **Motivo:** en un PC lento 6 s podían no bastar, y el robot habría escrito antes de que existiera el menú; en uno
+  rápido eran espera perdida. Y si el navegador se abría antes de que el servidor escuchase, se veía un error de
+  conexión.
+- **Coste:** la primera consulta de la web (el contador de registros) tarda lo que tarde DOSBox en arrancar. Si
+  DOSBox no aparece en 20 s, la web muestra el error "No se encuentra la ventana de DOSBox".

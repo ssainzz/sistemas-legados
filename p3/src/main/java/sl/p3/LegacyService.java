@@ -31,6 +31,10 @@ public final class LegacyService {
     private static final int SHORT_MS = 8000, SEARCH_MS = 30000;
     /** Caracteres minimos del nombre buscado: con menos, la busqueda por subcadena da cientos de resultados. */
     public static final int MIN_NOMBRE = 3;
+    /** Maximo que la primera operacion espera a que DOSBox cargue GW-BASIC y muestre el menu (ms). */
+    private static final int STARTUP_MS = 20000;
+    /** false hasta la primera operacion: solo entonces se espera al arranque de DOSBox. */
+    private boolean started;
 
     private final ReentrantLock lock = new ReentrantLock();
     private final DosboxWindow window;
@@ -215,10 +219,17 @@ public final class LegacyService {
         }
     }
 
-    /** Foco en DOSBox y comprobacion de que estamos en el menu principal. */
+    /**
+     * Foco en DOSBox y comprobacion de que estamos en el menu principal. En la primera operacion DOSBox puede estar
+     * aun arrancando (arrancar.bat no espera): antes de intentar recuperar nada se deja que aparezca el menu solo.
+     */
     private void begin() {
         window.focus();
-        if (!isMenu(screen.ocr(screen.captureStable()))) recoverToMenu();
+        String t = started
+                ? screen.ocr(screen.captureStable())
+                : waitUntil(() -> {}, STARTUP_MS, LegacyService::isMenu);
+        if (!isMenu(t)) recoverToMenu();
+        started = true;
     }
 
     private static boolean isMenu(String text) {

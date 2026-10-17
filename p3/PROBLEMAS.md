@@ -223,7 +223,7 @@ Formato de cada entrada: **síntoma → causa → solución → estado**.
 
 Se mueven a la sección 1 cuando se confirmen.
 
-- **Configuración de DOSBox ajena:** `Database-MSDOS/stdout.txt` muestra una configuración generada en
+- ~~**Configuración de DOSBox ajena:**~~ Resuelto con `dosbox-wrapper.conf` (D31). `Database-MSDOS/stdout.txt` muestra una configuración generada en
   `C:\Users\berta\AppData\Local\DOSBox\`. En cada PC se usará la propia, y su tamaño de ventana puede variar.
 - **Escalado de pantalla distinto de 100 %:** las coordenadas de la ventana pueden no coincidir con las del `Robot`.
 - **El OCR no llega al 100 %:** el enunciado ya lo avisa. Aún no hay medidas de precisión.

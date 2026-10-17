@@ -57,17 +57,19 @@ Al empezar solo funcionaba con nombres de A-Z, 0-9, espacio y `-`, y devolvía u
 
 ### 2. Que arranque con doble clic en otro PC
 
-- [ ] **2.1. Configuración propia de DOSBox.** Hoy usa la de `%LOCALAPPDATA%\DOSBox`, que en cada PC puede ser distinta,
-  y el lector exige un área de exactamente 640×400. Hay que crear un `.conf` fuera de `Database-MSDOS/` (por ejemplo
-  `p3/dosbox-wrapper.conf`, con `windowresolution=original`, `output=surface` y `keyboardlayout=auto`, que hace que DOSBox use la misma distribución
-  que Windows; el punto 1.2 depende de ello) y lanzar DOSBox
-  desde `arrancar.bat` con `-conf`, con los mismos argumentos que `database.bat`. Así no se modifica nada de la carpeta
-  de la aplicación.
-- [ ] **2.2. Esperar a DOSBox sin pausa fija.** `arrancar.bat` espera 6 s fijos. Mejor que el servidor arranque
-  igualmente y que `DosboxWindow` reintente encontrar la ventana unos segundos, o que el `.bat` espere hasta que exista.
-- [ ] **2.3. Mensaje claro si el puerto está ocupado.** Hoy sale un `BindException` y la ventana se cierra en la pausa. El
-  puerto 8090 está escrito a la vez en `config.properties`, `Config.java` y la URL de `arrancar.bat`: o bien leerlo del
-  `.properties` en el `.bat`, o que `Main` abra el navegador con el puerto real (`Desktop.browse`).
+- [x] **2.1. Configuración propia de DOSBox.** `p3/dosbox-wrapper.conf` (fuera de `Database-MSDOS/`) fija los valores
+  por defecto con los que se construyó el lector (ventana 640×400) y `keyboardlayout=auto`. `arrancar.bat` lanza la
+  misma orden que `database.bat` más `-conf` (`DECISIONES.md`, D31).
+- [x] **2.2. Esperar a DOSBox sin pausa fija.** El `.bat` ya no espera: `DosboxWindow.focus()` espera hasta 20 s a la
+  ventana, la primera operación espera hasta 20 s al menú, y el servidor abre el navegador cuando ya escucha
+  (`servidor --abrir`) (`DECISIONES.md`, D32).
+  - [x] Probar: recompilar (`mvn clean package` con el servidor cerrado), cerrar DOSBox y hacer doble clic en
+    `arrancar.bat`. Debe abrirse DOSBox, luego el navegador, y el contador debe llegar a 763 sin tocar nada. Comprobar
+    también que la ventana de DOSBox mide lo mismo que antes (`java -jar target\wrapper-legacy.jar calibrar` debe dar
+    640×400).
+- [ ] **2.3. Mensaje claro si el puerto está ocupado.** Hoy sale un `BindException` y la ventana se cierra en la pausa.
+  La URL del navegador ya sale del puerto de `config.properties` (D32); falta capturar el error y explicar cómo cambiar
+  el puerto.
 - [ ] **2.4. Probar en un Windows limpio** (o en el PC de otro miembro del grupo sin instalar nada), descomprimiendo el
   ZIP de prueba: con y sin Java 17+ en el PATH, escalado 100 % y 150 %, sin Maven. Si no hay Java 17+, que el `.bat` lo
   diga claramente (hoy acaba en un `UnsupportedClassVersionError` con el Java 8 del PATH).
@@ -125,7 +127,7 @@ Ordenado de más útil a menos. Lo marcado con ⚠️ no lo pide el enunciado pe
 
 Ya están resueltos pero el comentario sigue diciendo lo contrario:
 
-- [ ] **6.1.** `arrancar.bat:2` – quitar "(ESQUELETO)".
+- [x] **6.1.** `arrancar.bat:2` – quitado "(ESQUELETO)" al rehacer el `.bat` (2.1).
 - [ ] **6.2.** `DosboxWindow.java:26-27` – el TODO del escalado está resuelto (`sun.java2d.uiScale=1`, probado al
   150 %, D9). Sustituirlo por una nota que lo explique.
 - [ ] **6.3.** `LegacyService.java:116` – el final del listado ya está verificado (la última página muestra "PULSA SPACE"

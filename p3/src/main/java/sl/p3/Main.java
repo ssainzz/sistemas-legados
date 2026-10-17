@@ -5,13 +5,14 @@ import java.nio.file.Path;
 
 /**
  * Uso:
- *   java -jar target/wrapper-legacy.jar                 servidor web (por defecto)
+ *   java -jar target/wrapper-legacy.jar                 servidor web (por defecto; "servidor --abrir" abre el navegador)
  *   java -jar target/wrapper-legacy.jar calibrar        captura la ventana de DOSBox -> debug/calibracion.png + texto OCR
  *   java -jar target/wrapper-legacy.jar contar          caso de uso 1 por consola
  *   java -jar target/wrapper-legacy.jar programa MUGSY  caso de uso 2 por consola
  *   java -jar target/wrapper-legacy.jar cinta B         caso de uso 3 por consola
  *
- * Requisito: DOSBox abierto con la aplicacion (database.bat), visible y en el menu principal.
+ * Requisito: DOSBox abierto con la aplicacion (arrancar.bat o database.bat), visible y en el menu principal. Si
+ * acaba de lanzarse, la primera operacion espera a que aparezca su ventana y el menu.
  */
 public final class Main {
     public static void main(String[] args) throws Exception {
@@ -25,7 +26,10 @@ public final class Main {
         switch (cmd) {
             case "servidor" -> {
                 new WebServer(cfg, legacy).start();
-                System.out.println("Servidor en http://localhost:" + cfg.port + "/  (Ctrl+C para parar)");
+                String url = "http://localhost:" + cfg.port + "/";
+                System.out.println("Servidor en " + url + "  (Ctrl+C para parar)");
+                // arrancar.bat pasa --abrir: el navegador se abre cuando el servidor ya escucha, y con el puerto real.
+                if (java.util.Arrays.asList(args).contains("--abrir")) abrirNavegador(url);
             }
             case "calibrar" -> {
                 ScreenReader sr = legacy.screenReader();
@@ -48,6 +52,14 @@ public final class Main {
                     java.util.Arrays.copyOfRange(args, 1, args.length))).forEach(System.out::println);
             case "cinta" -> legacy.listarCinta(args[1]).forEach(System.out::println);
             default -> System.err.println("Comando desconocido: " + cmd);
+        }
+    }
+
+    private static void abrirNavegador(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(java.net.URI.create(url));
+        } catch (Exception | Error e) { // sin escritorio o sin navegador por defecto: basta con la URL en la consola
+            System.out.println("Abre " + url + " en el navegador.");
         }
     }
 }

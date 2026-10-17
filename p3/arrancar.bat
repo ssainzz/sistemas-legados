@@ -1,7 +1,8 @@
 @echo off
-rem ---- Arranque "doble clic" (ESQUELETO) ----
-rem 1) Lanza la aplicacion legada en DOSBox (visible: Robot necesita verla y darle el foco).
-rem 2) Espera a que cargue.  3) Arranca el servidor web y abre el navegador.
+rem ---- Arranque "doble clic" ----
+rem 1) Lanza la aplicacion legada en DOSBox (visible: Robot necesita verla y darle el foco), con la misma orden que
+rem    Database-MSDOS\database.bat mas la configuracion propia dosbox-wrapper.conf (ventana fija de 640x400).
+rem 2) Arranca el servidor web, que espera a que aparezca DOSBox y abre el navegador cuando esta listo.
 rem No se modifica nada de Database-MSDOS.
 setlocal
 cd /d "%~dp0"
@@ -20,10 +21,10 @@ for /d %%J in ("%ProgramFiles%\OpenJDK\jdk-*" "%ProgramFiles%\Eclipse Adoptium\j
 if defined JAVA_HOME if exist "%JAVA_HOME%\bin\java.exe" if "%JAVA%"=="java" set "JAVA=%JAVA_HOME%\bin\java.exe"
 echo Usando Java: %JAVA%
 
-start "" /d "%~dp0Database-MSDOS" database.bat
-echo Esperando a que arranque DOSBox...
-timeout /t 6 /nobreak >nul
+rem Misma orden que database.bat (desde su carpeta) + -conf. Sin -conf, DOSBox usaria la configuracion del usuario.
+start "" /d "%~dp0Database-MSDOS" "DOSBox-0.74\DOSBox.exe" Database\gwbasic.bat -noconsole -conf "%~dp0dosbox-wrapper.conf"
 
-start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:8090/"
-"%JAVA%" -jar "target\wrapper-legacy.jar"
+rem --abrir: el servidor abre el navegador en cuanto esta escuchando. No hace falta esperar a DOSBox aqui: el wrapper
+rem lo espera en la primera operacion.
+"%JAVA%" -jar "target\wrapper-legacy.jar" servidor --abrir
 pause

@@ -29,7 +29,8 @@ Si falta `target\wrapper-legacy.jar`, compilar con `mvn clean package` (hace fal
 | `WebServer` | `/api/registros`, `/api/programa?nombre=`, `/api/cinta?id=` y estáticos |
 | `index.html` | Interfaz web conectada a la API |
 | `config.properties` | Retardos, zona de captura, motor de lectura, puerto |
-| `arrancar.bat` | Doble clic: DOSBox + servidor + navegador |
+| `arrancar.bat` | Doble clic: DOSBox (con `dosbox-wrapper.conf`) + servidor, que abre el navegador al estar listo |
+| `dosbox-wrapper.conf` | Configuración fija de DOSBox (ventana 640×400, teclado como Windows); fuera de `Database-MSDOS` |
 | `corpus/` | Pantallas reales de DOSBox (menú, mensajes y las 43 páginas del listado) usadas por los tests |
 | `capturas/` | Capturas para la memoria (lista en `PROBLEMAS.md`, sección 4) |
 
@@ -72,7 +73,7 @@ Nunca usar las opciones 1, 2, 3 ni 5 del menú (modifican/imprimen datos).
 - [x] Capturas del OCR (10-15) y de la comparación legado/web (23).
 - [ ] Captura de `arrancar.bat` (22): la ventana de comandos, tras un doble clic.
 - [ ] Nombres repetidos y búsqueda por subcadena en la opción 7 (la aplicación pregunta "ES ESTE?" por cada uno).
-- [ ] Config propia de DOSBox con `-conf` (hoy usa la de `%LOCALAPPDATA%\DOSBox`) y ventana a posición/tamaño fijos.
+- [x] Config propia de DOSBox con `-conf` (`dosbox-wrapper.conf`, D31) y arranque sin pausas fijas (D32).
 - [ ] Probar `arrancar.bat` en un Windows limpio.
 - [ ] La web carga Tailwind y las fuentes desde internet: valorar incluirlas en local.
 - [x] Memoria (borrador en `memoria/memoria.docx`, editable en Google Docs). Falta el reparto de tareas y las horas (tabla vacía).

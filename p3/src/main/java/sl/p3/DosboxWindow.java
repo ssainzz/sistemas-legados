@@ -36,6 +36,9 @@ public final class DosboxWindow {
         void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
     }
 
+    /** Maximo que se espera a que aparezca la ventana de DOSBox (ms). */
+    private static final int WINDOW_WAIT_MS = 20000;
+
     private final String titlePrefix;
 
     public DosboxWindow(String titlePrefix) {
@@ -61,9 +64,23 @@ public final class DosboxWindow {
                         + "'). Ejecuta database.bat primero."));
     }
 
-    /** Restaura (si estaba minimizada) y da el foco a la ventana. */
+    /**
+     * Espera hasta {@code timeoutMs} a que exista la ventana. arrancar.bat lanza DOSBox y el servidor a la vez, sin
+     * pausa fija, asi que la primera operacion puede llegar antes de que DOSBox haya abierto su ventana.
+     */
+    public HWND await(int timeoutMs) {
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        Optional<HWND> h = find();
+        while (h.isEmpty() && System.currentTimeMillis() < deadline) {
+            sleep(250);
+            h = find();
+        }
+        return h.orElseGet(this::require); // si sigue sin aparecer, require() lanza el error con la explicacion
+    }
+
+    /** Restaura (si estaba minimizada) y da el foco a la ventana (esperandola si aun no ha aparecido). */
     public void focus() {
-        HWND h = require();
+        HWND h = await(WINDOW_WAIT_MS);
         User32.INSTANCE.ShowWindow(h, WinUser.SW_RESTORE);
         // Windows solo deja pasar al frente a quien acaba de recibir una entrada de teclado:
         // un toque de Alt lo permite. Se reintenta hasta que DOSBox sea la ventana activa.
