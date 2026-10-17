@@ -39,6 +39,7 @@ Menú (sin Enter): `4` info · `6` listar · `7` buscar. Las respuestas S/N van 
 
 1. **Registros**: `4` → "CONTIENE 763 ARCHIVOS" → Enter.
 2. **Programa por nombre**: `7` → `N`⏎ → `NOMBRE`⏎ → "ES ESTE?" `S`⏎ → "ALTERAR?" `N`⏎ → "BUSCAR MÁS?" `N`⏎.
+   El wrapper no responde nunca `S`: contesta `N`⏎ a cada "ES ESTE?" para leer todos los resultados.
    La búsqueda **distingue mayúsculas** y encuentra el texto **en cualquier parte del nombre** (`MONTY` encuentra
    también "AUF WIEDERSEHEN MONTY"). Con varios resultados muestra uno y pregunta "ES ESTE?": con `N`⏎ pasa al
    siguiente, y tras el último sale "NO HAY NINGUN PROGRAMA CON ESTE NOMBRE PULSA ENTER" → ⏎ → "BUSCAR MÁS?" `N`⏎.

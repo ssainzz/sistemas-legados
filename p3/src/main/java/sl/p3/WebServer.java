@@ -18,7 +18,7 @@ import java.util.Map;
  * Servidor web minimo (com.sun.net.httpserver, sin dependencias) con la API REST y los ficheros estaticos.
  *
  *   GET /api/registros          -> {"registros":763}
- *   GET /api/programa?nombre=X  -> {"resultados":[{"numero":..,"nombre":..,"tipo":..,"cinta":..,"registro":..}]}
+ *   GET /api/programa?nombre=X  -> {"resultados":[{"numero":..,"nombre":..,"tipo":..,"cinta":..,"registro":..,"exacto":..}]}
  *   GET /api/cinta?id=A         -> {"cinta":"A","resultados":[ ... ]}
  *   GET /                       -> index.html (de web.root)
  *
@@ -39,13 +39,12 @@ public final class WebServer {
         server.createContext("/api/registros", ex -> api(ex, () ->
                 "{\"registros\":" + legacy.contarRegistros() + "}"));
         server.createContext("/api/programa", ex -> api(ex, () -> {
-            String nombre = param(ex, "nombre");
-            var found = legacy.buscarPorNombre(nombre);
-            return "{\"resultados\":" + json(found.map(List::of).orElse(List.of())) + "}";
+            String nombre = param(ex, "nombre").trim();
+            return "{\"resultados\":" + json(legacy.buscarPorNombre(nombre), nombre) + "}";
         }));
         server.createContext("/api/cinta", ex -> api(ex, () -> {
             String id = param(ex, "id");
-            return "{\"cinta\":" + str(id.toUpperCase()) + ",\"resultados\":" + json(legacy.listarCinta(id)) + "}";
+            return "{\"cinta\":" + str(id.toUpperCase()) + ",\"resultados\":" + json(legacy.listarCinta(id), null) + "}";
         }));
         server.createContext("/", this::staticFile);
         // Un solo hilo: las peticiones se atienden de una en una (solo hay un DOSBox).
@@ -123,7 +122,11 @@ public final class WebServer {
 
     // --------------------------------------------------------------- JSON
 
-    private static String json(List<ProgramRecord> list) {
+    /**
+     * Lista de programas en JSON. Si se pasa el nombre buscado, cada uno lleva {@code "exacto"}: true si
+     * su nombre es exactamente ese (la aplicacion distingue mayusculas, asi que aqui tambien).
+     */
+    private static String json(List<ProgramRecord> list, String nombreBuscado) {
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < list.size(); i++) {
             ProgramRecord r = list.get(i);
@@ -132,7 +135,9 @@ public final class WebServer {
                     .append(",\"nombre\":").append(str(r.nombre()))
                     .append(",\"tipo\":").append(str(r.tipo()))
                     .append(",\"cinta\":").append(str(r.cinta()))
-                    .append(",\"registro\":").append(r.registro()).append('}');
+                    .append(",\"registro\":").append(r.registro());
+            if (nombreBuscado != null) sb.append(",\"exacto\":").append(r.nombre().equals(nombreBuscado));
+            sb.append('}');
         }
         return sb.append(']').toString();
     }

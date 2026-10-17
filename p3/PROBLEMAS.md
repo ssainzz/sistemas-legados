@@ -197,8 +197,10 @@ Formato de cada entrada: **síntoma → causa → solución → estado**.
     - Datos reales (`DATOS.DAT`): 5 nombres repetidos (`DEFENDER`, `GALLIPOLI`, `MONTY ON THE RUN`, `STREET HAWK`,
       `STRIP POKER`) y 2 con minúsculas (`BARRY McGUIGAN'S BOXING`, `FRIDAY 13th`). El wrapper respondía `S` al
       primer "ES ESTE?" y devolvía solo ese.
-    - Solución: `PENDIENTE.md`, puntos 1.3 y 1.4.
-    - Estado: pendiente.
+    - Solución: el nombre se escribe tal cual y se responde `N` a cada "ES ESTE?" hasta "NO HAY NINGUN", devolviendo
+      todos los resultados en orden. La web marca los exactos y pide 3 caracteres como mínimo (`DECISIONES.md`,
+      D25-D29).
+    - Estado: resuelto en el código; falta probarlo en DOSBox (`PENDIENTE.md`, 1.6).
 
 26. **45 nombres no se podían buscar porque el robot no sabía escribir sus signos**
     - Síntoma: el robot solo escribía A-Z, 0-9, espacio y `-`. En `DATOS.DAT` hay 45 nombres con `'` (30), `.` (21),

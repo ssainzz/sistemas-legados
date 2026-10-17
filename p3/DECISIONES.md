@@ -144,10 +144,85 @@ Formato: *había → decisión → motivo → coste*.
   A-Z/0-9. Los errores del servidor se muestran en la tabla en vez de fallar en silencio. Los formularios se
   desactivan mientras hay una operación en curso (solo hay un DOSBox).
 - **Coste:** no se pueden buscar nombres con acentos, ñ o signos. El servidor responde 400 en ese caso.
+- **Actualizado (17/10/2026):** ahora admite también minúsculas y los signos `- ' . ! &`, y exige 3 caracteres como
+  mínimo (D24, D25 y D28).
 
 ### D22. La API devuelve también la columna REGISTRO
 - **Había:** el JSON solo traía número, nombre, tipo y cinta.
 - **Motivo:** el listado de la aplicación original muestra esa columna y la web debe parecerse a ella.
+- **Actualizado (17/10/2026):** la web enseña una sola columna "Nº REGISTRO" (D30); la API mantiene los dos campos.
 
 ### D23. Las capturas de la web se recortan al contenido de la página
 - **Motivo:** las capturas de ventana completa incluían los marcadores y la barra lateral personales del navegador.
+
+---
+
+## 6. Búsqueda por nombre (17/10/2026)
+
+Comportamiento de la opción 7 comprobado a mano (`PROBLEMAS.md`, problema 25): distingue mayúsculas, busca el texto en
+cualquier parte del nombre y enseña los resultados de uno en uno preguntando "ES ESTE?".
+
+### D24. Los signos se teclean según la distribución de teclado de Windows
+- **Había:** el robot solo escribía A-Z, 0-9, espacio y `-`, con códigos de tecla de `Robot` fijos.
+- **Decisión:** para `- ' . ! &` se pregunta a Windows qué tecla, y si lleva Shift, da el carácter en la distribución
+  actual (`VkKeyScanW`), y se pulsa con su código de exploración (`MapVirtualKeyW` + `keybd_event`). Letras, números y
+  espacio siguen con `Robot`. Solo se admiten esos cinco signos: son los que aparecen en `DATOS.DAT`.
+- **Motivo:** 45 de los 763 nombres llevan esos signos y no se podían buscar. Su tecla cambia con la distribución (el
+  apóstrofo está junto al 0 en el teclado español y junto al Enter en el inglés).
+- **Coste:** depende de que DOSBox use la misma distribución que Windows (`keyboardlayout=auto`, el valor por
+  defecto). Los signos que necesitan AltGr no se envían. Probado en DOSBox con `KNIGHT'S LORE`, `B.C. BILL`,
+  `N.O.M.A.D`, `WHAM! THE MUSIC BOX` y `OLLI & LISSA`.
+
+### D25. El nombre se escribe tal cual, sin pasarlo a mayúsculas
+- **Había:** el wrapper y la web pasaban el nombre a mayúsculas.
+- **Decisión:** se envía exactamente lo que escribe el usuario. La web ya no muestra el campo en mayúsculas y admite
+  minúsculas.
+- **Motivo:** la aplicación distingue mayúsculas: `FRIDAY 13TH` no encuentra `FRIDAY 13th`.
+- **Coste:** quien busque en minúsculas un nombre guardado en mayúsculas no lo encuentra, igual que en la aplicación
+  original. La web lo avisa en el mensaje de "sin resultados".
+
+### D26. Se devuelven todos los resultados, en el orden en que los da la aplicación
+- **Había:** se respondía `S` al primer "ES ESTE?", luego `N` a "ALTERAR?" y a "BUSCAR MÁS?", y se devolvía un único
+  programa.
+- **Decisión:** se responde `N` a cada "ES ESTE?" para pasar al siguiente, hasta "NO HAY NINGUN PROGRAMA"; después Enter
+  y `N` a "BUSCAR ALGUNO MAS". `/api/programa` devuelve la lista completa sin reordenar ni filtrar.
+- **Motivo:** hay 5 nombres repetidos (`DEFENDER`, `GALLIPOLI`, ...) y la búsqueda es por subcadena. Devolver todo lo
+  que enseña la aplicación es lo más parecido a usarla directamente.
+- **Efecto añadido:** el wrapper ya no envía nunca una `S`, así que la aplicación no llega a preguntar "QUIERES ALTERAR
+  SUS DATOS?". Es más seguro que antes.
+- **Coste:** cada resultado cuesta una `N` y una espera mientras la aplicación sigue recorriendo registros. Una búsqueda
+  con muchos resultados tarda bastante, y durante ese tiempo no se atienden otras peticiones (solo hay un DOSBox).
+
+### D27. Se marcan en la web los que coinciden exactamente
+- **Decisión:** cada resultado de `/api/programa` lleva `"exacto": true/false` (nombre idéntico al buscado, distinguiendo
+  mayúsculas, como la aplicación). La web resalta esas filas con el color del formulario de nombre y la etiqueta
+  `EXACTO`, y el pie de la tabla dice cuántos hay.
+- **Motivo:** como la búsqueda es por subcadena, `MONTY` devuelve también "AUF WIEDERSEHEN MONTY"; así se ve de un
+  vistazo cuál es el programa pedido sin perder el resto.
+- **Coste:** la comparación se hace en el servidor (`WebServer.json`); `/api/cinta` no lleva ese campo.
+
+### D28. Mínimo de 3 caracteres y sin máximo de resultados
+- **Decisión:** el nombre buscado debe tener al menos 3 caracteres (`LegacyService.MIN_NOMBRE`, y también en la web).
+  No hay límite de resultados: se muestran todos los que da la aplicación.
+- **Motivo:** con 1 o 2 letras (`A`, `E`) coinciden cientos de programas y la búsqueda tardaría minutos con el DOSBox
+  bloqueado. Con 3 caracteres el número baja mucho y se puede enseñar todo sin recortar.
+- **Alternativa descartada:** un máximo de unos 50 resultados y salir con `recoverToMenu`. Se descartó porque ocultaba
+  resultados que la aplicación sí enseña.
+- **Coste:** búsquedas de 3 letras muy comunes (`THE`) siguen dando muchos resultados y tardan. El servidor responde
+  400 si el nombre es más corto.
+
+### D29. Una pantalla de resultado solo es nueva si muestra un registro aún no leído
+- **Decisión:** tras cada `N` se espera (hasta 30 s) a "NO HAY NINGUN" o a un "ES ESTE?" con un número de registro que
+  no se haya leído ya. Si al acabar la espera sigue el mismo registro, se lanza un error ("la búsqueda no avanza").
+- **Motivo:** justo después de la `N` la pantalla anterior sigue visible un momento; esperar solo a "ES ESTE" la daría
+  por buena y contaría dos veces el mismo programa.
+- **Coste:** si la aplicación mostrase dos veces el mismo registro en una búsqueda (no se ha visto) se tomaría como
+  error.
+
+### D30. Una sola columna "Nº REGISTRO" en la web
+- **Había:** la tabla de la web tenía las columnas Nº y REGISTRO, como el listado de la aplicación (D22).
+- **Decisión:** se muestra una sola columna, "Nº REGISTRO", a la izquierda del nombre, con el valor de REGISTRO.
+- **Motivo:** las dos columnas siempre valen lo mismo: el listado está ordenado por ANTIGÜEDAD (D11, y `checkPage`
+  comprueba que Nº = REGISTRO en cada fila) y en la búsqueda por nombre solo hay un número. Repetirlo confundía.
+- **Coste:** ninguno en los datos: la API sigue devolviendo `numero` y `registro`. Si algún día el orden no fuera
+  ANTIGÜEDAD, la web dejaría de enseñar la posición en el listado; hoy eso ya se trata como error (D11).

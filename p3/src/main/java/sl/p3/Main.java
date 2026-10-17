@@ -44,8 +44,8 @@ public final class Main {
             }
             case "bench" -> OcrBench.run(Path.of("corpus"), Path.of("ocr-resultados.md"), Path.of("capturas"));
             case "contar" -> System.out.println(legacy.contarRegistros());
-            case "programa" -> System.out.println(legacy.buscarPorNombre(String.join(" ",
-                    java.util.Arrays.copyOfRange(args, 1, args.length))));
+            case "programa" -> legacy.buscarPorNombre(String.join(" ",
+                    java.util.Arrays.copyOfRange(args, 1, args.length))).forEach(System.out::println);
             case "cinta" -> legacy.listarCinta(args[1]).forEach(System.out::println);
             default -> System.err.println("Comando desconocido: " + cmd);
         }

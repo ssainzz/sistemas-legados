@@ -29,6 +29,23 @@ class ScreenParserTest {
         assertEquals("A", r.cinta());
     }
 
+    /** Nombres con signos y minusculas tal como salen en "ES ESTE?" (resultados reales de la busqueda). */
+    @Test
+    void programaPorNombreConSignosYMinusculas() {
+        ProgramRecord r = ScreenParser.parseSingle("    87  - KNIGHT'S LORE   VIDEOAVENTURA   CINTA:G-U\nES ESTE ? (S/N)  ?")
+                .orElseThrow();
+        assertEquals(87, r.numero());
+        assertEquals("KNIGHT'S LORE", r.nombre());
+        assertEquals(List.of("G", "U"), r.cintas());
+
+        r = ScreenParser.parseSingle("   219  - N.O.M.A.D.   ARCADE   CINTA:P-24").orElseThrow();
+        assertEquals("N.O.M.A.D.", r.nombre());
+        assertEquals("ARCADE", r.tipo());
+
+        r = ScreenParser.parseSingle("   1  - FRIDAY 13th   ARCADE   CINTA:X").orElseThrow();
+        assertEquals("FRIDAY 13th", r.nombre());
+    }
+
     @Test
     void paginaDeListado() {
         String page = """

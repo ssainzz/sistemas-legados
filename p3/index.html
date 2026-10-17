@@ -94,7 +94,7 @@
         <form id="name-form" class="bg-[#A3C4BC] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
             <label for="name-input" class="text-xs font-bold uppercase">Buscar por Nombre</label>
             <div class="flex gap-2">
-                <input type="text" id="name-input" autocomplete="off" maxlength="40" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono uppercase" placeholder="Ej: FEUD">
+                <input type="text" id="name-input" autocomplete="off" minlength="3" maxlength="40" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: FEUD (mín. 3 caracteres)">
                 <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase disabled:opacity-50">
                     Buscar
                 </button>
@@ -128,22 +128,21 @@
 
         <!-- Cabecera de la Tabla -->
         <div class="bg-black text-white flex-none pr-[12px]"> <!-- Padding right compensa el scrollbar grueso -->
-            <table class="w-full text-left text-xs uppercase font-bold">
+            <table class="w-full table-fixed text-left text-xs uppercase font-bold">
                 <thead>
                     <tr>
-                        <th class="py-2 px-3 border-r-2 border-white w-16 text-center">Nº</th>
+                        <th class="py-2 px-3 border-r-2 border-white w-28 text-center">Nº Registro</th>
                         <th class="py-2 px-3 border-r-2 border-white">Nombre del Programa</th>
                         <th class="py-2 px-3 border-r-2 border-white w-40">Tipo</th>
-                        <th class="py-2 px-3 border-r-2 border-white w-20 text-center">Cinta</th>
-                        <th class="py-2 px-3 w-24 text-center">Registro</th>
+                        <th class="py-2 px-3 w-20 text-center">Cinta</th>
                     </tr>
                 </thead>
             </table>
         </div>
 
         <!-- Cuerpo de la Tabla (Scrollable) -->
-        <div class="flex-1 overflow-y-auto custom-scrollbar">
-            <table class="w-full text-left text-sm font-mono">
+        <div class="flex-1 overflow-y-auto custom-scrollbar" style="scrollbar-gutter: stable"> <!-- hueco de la barra siempre reservado: así cuadra con la cabecera -->
+            <table class="w-full table-fixed text-left text-sm font-mono">
                 <tbody id="results-data"></tbody>
             </table>
             <p id="results-msg" class="p-6 text-center text-sm font-bold font-mono">
@@ -205,18 +204,28 @@
             tbody.replaceChildren();
             rows.forEach((r, i) => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b-2 border-black hover:bg-[#F4F1EA] transition-colors' + (i % 2 ? ' bg-white' : '');
+                // La aplicación busca por subcadena: se resaltan los programas cuyo nombre es exactamente el buscado.
+                let rowColor = i % 2 ? ' bg-white' : '';
+                if (r.exacto) rowColor = ' bg-[#A3C4BC] font-bold';
+                tr.className = 'border-b-2 border-black hover:bg-[#F4F1EA] transition-colors' + rowColor;
+                if (r.exacto) tr.title = 'Coincide exactamente con el nombre buscado';
+                // Nº y REGISTRO de la aplicación coinciden (orden por antigüedad): se muestra una sola columna.
                 const cells = [
-                    [r.numero, 'w-16 text-center font-bold'],
+                    [r.registro, 'w-28 text-center font-bold'],
                     [r.nombre, ''],
                     [r.tipo, 'w-40 text-xs'],
                     [r.cinta, 'w-20 text-center font-bold'],
-                    [r.registro, 'w-24 text-center'],
                 ];
                 cells.forEach(([text, cls], c) => {
                     const td = document.createElement('td');
-                    td.className = 'py-2 px-3 ' + (c < 4 ? 'border-r-2 border-black ' : '') + cls;
+                    td.className = 'py-2 px-3 ' + (c < cells.length - 1 ? 'border-r-2 border-black ' : '') + cls;
                     td.textContent = text;   // textContent: nunca se interpreta como HTML
+                    if (c === 1 && r.exacto) {
+                        const badge = document.createElement('span');
+                        badge.className = 'ml-2 px-1 border-2 border-black bg-white text-[10px] align-middle';
+                        badge.textContent = 'EXACTO';
+                        td.appendChild(badge);
+                    }
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
@@ -241,7 +250,12 @@
                 $('results-msg').classList.add('hidden');
                 if (rows.length) showRows(rows); else showMessage(onData.empty, false);
                 const secs = ((performance.now() - t0) / 1000).toFixed(1).replace('.', ',');
-                status(label + ': ' + rows.length + ' resultado' + (rows.length === 1 ? '' : 's'), 'OK · ' + secs + ' s', false);
+                let summary = label + ': ' + rows.length + ' resultado' + (rows.length === 1 ? '' : 's');
+                if (rows.length && 'exacto' in rows[0]) {
+                    const exact = rows.filter((r) => r.exacto).length;
+                    summary += ' (' + exact + ' exacto' + (exact === 1 ? '' : 's') + ')';
+                }
+                status(summary, 'OK · ' + secs + ' s', false);
             } catch (e) {
                 showMessage('No se pudo consultar la aplicación legada: ' + e.message, true);
                 status(label, 'ERROR', true);
@@ -253,15 +267,20 @@
 
         $('name-form').addEventListener('submit', (ev) => {
             ev.preventDefault();
-            const name = $('name-input').value.trim().toUpperCase();
+            // Sin pasar a mayúsculas: la aplicación legada distingue mayúsculas ("FRIDAY 13th").
+            const name = $('name-input').value.trim();
             if (!name) return;
-            if (!/^[A-Z0-9 \-'.!&]+$/.test(name)) {
+            if (name.length < 3) {
+                showMessage('Escribe al menos 3 caracteres: la aplicación busca el texto en cualquier parte del nombre.', true);
+                return;
+            }
+            if (!/^[A-Za-z0-9 \-'.!&]+$/.test(name)) {
                 showMessage('El nombre solo puede llevar letras sin acentos, números, espacios y los signos - \' . ! &', true);
                 return;
             }
             run('Programa «' + name + '»', '/api/programa?nombre=' + encodeURIComponent(name),
-                'Buscando «' + name + '» en la base de datos (puede tardar unos segundos)…',
-                { empty: 'No hay ningún programa con ese nombre.' });
+                'Buscando «' + name + '» en la base de datos (con varios resultados puede tardar un rato)…',
+                { empty: 'No hay ningún programa que contenga «' + name + '». Ojo: distingue mayúsculas.' });
         });
 
         $('tape-form').addEventListener('submit', (ev) => {

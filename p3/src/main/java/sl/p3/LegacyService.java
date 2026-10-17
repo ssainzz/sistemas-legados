@@ -4,9 +4,11 @@ import sl.p3.ScreenParser.ProgramRecord;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import static sl.p3.ScreenParser.has;
@@ -15,17 +17,20 @@ import static sl.p3.ScreenParser.has;
  * Los tres casos de uso de la practica sobre la aplicacion BASIC. Cada operacion:
  *   1. toma un lock (solo hay un DOSBox y un teclado: las peticiones web se serializan),
  *   2. da el foco a DOSBox y comprueba que esta en el MENU,
- *   3. envia teclas y lee la pantalla tras cada una (cambio + estabilizacion + OCR),
+ *   3. envia teclas y, tras cada una, espera a que aparezca la pantalla siguiente y la lee,
  *   4. deja la aplicacion otra vez en el menu.
  *
  * Reglas para no alterar los datos de la aplicacion legada:
  *   - Nunca se usan las opciones 1, 2, 3 ni 5 del menu (introducir, grabar, ordenar, imprimir).
- *   - A "QUIERES ALTERAR SUS DATOS?" se responde siempre N. La unica 'S' que se envia es la de "ES ESTE?".
+ *   - Nunca se envia 'S': a "ES ESTE?" se responde N para ver el siguiente resultado, y asi la
+ *     aplicacion no llega a preguntar "QUIERES ALTERAR SUS DATOS?".
  */
 public final class LegacyService {
     private static final int ROWS_PER_PAGE = 18;
     /** Esperas maximas (ms): respuesta normal de la aplicacion y busqueda por nombre (recorre los registros). */
     private static final int SHORT_MS = 8000, SEARCH_MS = 30000;
+    /** Caracteres minimos del nombre buscado: con menos, la busqueda por subcadena da cientos de resultados. */
+    public static final int MIN_NOMBRE = 3;
 
     private final ReentrantLock lock = new ReentrantLock();
     private final DosboxWindow window;
@@ -64,17 +69,19 @@ public final class LegacyService {
     // ---------------------------------------- caso de uso 2: programa por nombre
 
     /**
-     * Opcion 7 -> N + Enter -> NOMBRE + Enter -> (ES ESTE?) S + Enter -> (ALTERAR?) N + Enter ->
-     * (BUSCAR MAS?) N + Enter -> menu.   Si no existe: aviso + Enter -> (BUSCAR MAS?) N -> menu.
+     * Opcion 7 -> N + Enter -> NOMBRE + Enter -> (ES ESTE?) N + Enter por cada resultado ->
+     * "NO HAY NINGUN PROGRAMA" + Enter -> (BUSCAR MAS?) N + Enter -> menu.
      *
      * Comprobado a mano: la aplicacion distingue mayusculas y busca el texto en cualquier parte del
-     * nombre ("MONTY" encuentra tambien "AUF WIEDERSEHEN MONTY"). Con varios resultados pregunta
-     * "ES ESTE?" por cada uno; N pasa al siguiente y, tras el ultimo, sale "NO HAY NINGUN PROGRAMA".
-     * TODO: devolver todos los resultados (PENDIENTE.md 1.4) y no pasar el nombre a mayusculas (1.3).
+     * nombre ("MONTY" encuentra tambien "AUF WIEDERSEHEN MONTY"). Muestra los resultados de uno en
+     * uno preguntando "ES ESTE?"; N pasa al siguiente y, tras el ultimo (o si no hay ninguno), sale
+     * "NO HAY NINGUN PROGRAMA CON ESE NOMBRE". Se devuelven todos, en el orden en que salen, y el
+     * nombre se escribe tal cual (sin pasarlo a mayusculas).
      */
-    public Optional<ProgramRecord> buscarPorNombre(String nombre) {
-        String name = nombre.trim().toUpperCase();
-        if (name.isEmpty()) throw new IllegalArgumentException("Nombre vacio");
+    public List<ProgramRecord> buscarPorNombre(String nombre) {
+        String name = nombre.trim();
+        if (name.length() < MIN_NOMBRE)
+            throw new IllegalArgumentException("El nombre debe tener al menos " + MIN_NOMBRE + " caracteres");
         for (char c : name.toCharArray()) {
             if (!KeyboardDriver.isSupported(c))
                 throw new IllegalArgumentException("Caracter no soportado en el nombre: '" + c + "'");
@@ -83,23 +90,31 @@ public final class LegacyService {
             begin();
             expect(waitFor(() -> kb.typeChar('7'), SHORT_MS, "SABES EL NUMERO"), "SABES EL NUMERO");
             expect(waitFor(() -> kb.answer('N'), SHORT_MS, "NOMBRE DEL PROGRAMA"), "NOMBRE DEL PROGRAMA");
-            // La aplicacion recorre los registros uno a uno: puede tardar varios segundos.
-            String t = waitFor(() -> {
+
+            List<ProgramRecord> found = new ArrayList<>();
+            Set<Integer> vistos = new HashSet<>();
+            // Siguiente pantalla valida: el aviso final, o un "ES ESTE?" con un programa aun no leido. Tras
+            // una N la pantalla anterior sigue visible un momento; con el numero se distingue de la nueva.
+            Predicate<String> siguiente = t -> has(t, "NO HAY NINGUN") || (has(t, "ES ESTE")
+                    && ScreenParser.parseSingle(t).map(r -> !vistos.contains(r.numero())).orElse(false));
+            // La aplicacion recorre los registros uno a uno: cada resultado puede tardar varios segundos.
+            String t = waitUntil(() -> {
                 kb.type(name);
                 kb.enter();
-            }, SEARCH_MS, "ES ESTE", "NO HAY NINGUN");
-            if (has(t, "NO HAY NINGUN")) {
-                expect(waitFor(kb::enter, SHORT_MS, "BUSCAR ALGUNO MAS"), "BUSCAR ALGUNO MAS");
-                waitFor(() -> kb.answer('N'), SHORT_MS, "ACABAR");
-                return Optional.<ProgramRecord>empty();
+            }, SEARCH_MS, siguiente);
+            while (!has(t, "NO HAY NINGUN")) {
+                expect(t, "ES ESTE");
+                final String screenText = t;
+                ProgramRecord rec = ScreenParser.parseSingle(t)
+                        .orElseThrow(() -> new LegacyException("No se pudo leer el programa:\n" + screenText));
+                if (!vistos.add(rec.numero()))
+                    throw new LegacyException("La busqueda no avanza: el registro " + rec.numero() + " sale dos veces");
+                found.add(rec);
+                t = waitUntil(() -> kb.answer('N'), SEARCH_MS, siguiente);
             }
-            expect(t, "ES ESTE");
-            ProgramRecord rec = ScreenParser.parseSingle(t)
-                    .orElseThrow(() -> new LegacyException("No se pudo leer el programa:\n" + t));
-            expect(waitFor(() -> kb.answer('S'), SHORT_MS, "ALTERAR"), "ALTERAR");
-            expect(waitFor(() -> kb.answer('N'), SHORT_MS, "BUSCAR ALGUNO MAS"), "BUSCAR ALGUNO MAS");
+            expect(waitFor(kb::enter, SHORT_MS, "BUSCAR ALGUNO MAS"), "BUSCAR ALGUNO MAS");
             waitFor(() -> kb.answer('N'), SHORT_MS, "ACABAR");
-            return Optional.of(rec);
+            return found;
         });
     }
 
@@ -245,11 +260,15 @@ public final class LegacyService {
      * la esperada, y si no lo es el mensaje de error incluye lo que habia en pantalla.
      */
     private String waitFor(Runnable action, int timeoutMs, String... phrases) {
-        BufferedImage img = screen.captureUntil(action, t -> {
+        return waitUntil(action, timeoutMs, t -> {
             for (String p : phrases) if (has(t, p)) return true;
             return false;
-        }, timeoutMs);
-        return screen.ocr(img);
+        });
+    }
+
+    /** Como {@link #waitFor}, pero con cualquier condicion sobre el texto de la pantalla. */
+    private String waitUntil(Runnable action, int timeoutMs, Predicate<String> done) {
+        return screen.ocr(screen.captureUntil(action, done, timeoutMs));
     }
 
     /**
@@ -258,7 +277,7 @@ public final class LegacyService {
      * el aviso "PULSA SPACE" de la pagina anterior sigue en pantalla mientras tanto, asi que ninguna de
      * las dos cosas basta por separado para saber que la pagina ha terminado de pintarse.
      */
-    private static java.util.function.Predicate<String> pageStartsAt(int n, int total) {
+    private static Predicate<String> pageStartsAt(int n, int total) {
         int expectedRows = Math.min(ROWS_PER_PAGE, total - n + 1);
         return t -> {
             List<ProgramRecord> rows = ScreenParser.parseListingPage(t);
