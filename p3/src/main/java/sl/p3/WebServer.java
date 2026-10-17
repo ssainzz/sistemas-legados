@@ -18,11 +18,11 @@ import java.util.Map;
  * Servidor web minimo (com.sun.net.httpserver, sin dependencias) con la API REST y los ficheros estaticos.
  *
  *   GET /api/registros          -> {"registros":763}
- *   GET /api/programa?nombre=X  -> {"resultados":[{"numero":..,"nombre":..,"tipo":..,"cinta":..}]}
+ *   GET /api/programa?nombre=X  -> {"resultados":[{"numero":..,"nombre":..,"tipo":..,"cinta":..,"registro":..}]}
  *   GET /api/cinta?id=A         -> {"cinta":"A","resultados":[ ... ]}
  *   GET /                       -> index.html (de web.root)
  *
- * TODO: conectar index.html (ahora es una maqueta con datos fijos) con estas rutas mediante fetch().
+ * Cada peticion de la API consulta de verdad la aplicacion legada (no hay cache).
  */
 public final class WebServer {
     private final Config cfg;
@@ -131,7 +131,8 @@ public final class WebServer {
             sb.append("{\"numero\":").append(r.numero())
                     .append(",\"nombre\":").append(str(r.nombre()))
                     .append(",\"tipo\":").append(str(r.tipo()))
-                    .append(",\"cinta\":").append(str(r.cinta())).append('}');
+                    .append(",\"cinta\":").append(str(r.cinta()))
+                    .append(",\"registro\":").append(r.registro()).append('}');
         }
         return sb.append(']').toString();
     }

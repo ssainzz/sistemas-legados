@@ -12,10 +12,18 @@ if not exist "target\wrapper-legacy.jar" (
   exit /b 1
 )
 
+rem Java 17+ (el "java" del PATH puede ser un Java 8 antiguo). Se busca un JDK conocido.
+set "JAVA=java"
+for /d %%J in ("%ProgramFiles%\OpenJDK\jdk-*" "%ProgramFiles%\Eclipse Adoptium\jdk-*" "%ProgramFiles%\Java\jdk-*" "%ProgramFiles%\Microsoft\jdk-*") do (
+  if exist "%%~J\bin\java.exe" set "JAVA=%%~J\bin\java.exe"
+)
+if defined JAVA_HOME if exist "%JAVA_HOME%\bin\java.exe" if "%JAVA%"=="java" set "JAVA=%JAVA_HOME%\bin\java.exe"
+echo Usando Java: %JAVA%
+
 start "" /d "%~dp0Database-MSDOS" database.bat
 echo Esperando a que arranque DOSBox...
 timeout /t 6 /nobreak >nul
 
-start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:8080/"
-java -jar "target\wrapper-legacy.jar"
+start "" cmd /c "timeout /t 3 /nobreak >nul & start http://localhost:8090/"
+"%JAVA%" -jar "target\wrapper-legacy.jar"
 pause

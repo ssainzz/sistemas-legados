@@ -6,6 +6,7 @@ import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinDef.POINT;
 import com.sun.jna.platform.win32.WinDef.RECT;
 import com.sun.jna.platform.win32.WinUser;
+import com.sun.jna.win32.StdCallLibrary;
 
 import java.awt.Rectangle;
 import java.util.ArrayList;
@@ -26,6 +27,15 @@ import java.util.Optional;
  * (pixeles fisicos) coinciden con las de Robot (pixeles logicos). Si no, usar capture.* en la config.
  */
 public final class DosboxWindow {
+    /** Funciones de user32 que jna-platform no trae en User32: se declaran aqui. */
+    private interface ClientToScreenLib extends StdCallLibrary {
+        ClientToScreenLib INSTANCE = Native.load("user32", ClientToScreenLib.class);
+
+        boolean ClientToScreen(HWND hWnd, POINT lpPoint);
+
+        void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+    }
+
     private final String titlePrefix;
 
     public DosboxWindow(String titlePrefix) {
@@ -55,7 +65,24 @@ public final class DosboxWindow {
     public void focus() {
         HWND h = require();
         User32.INSTANCE.ShowWindow(h, WinUser.SW_RESTORE);
-        User32.INSTANCE.SetForegroundWindow(h);
+        // Windows solo deja pasar al frente a quien acaba de recibir una entrada de teclado:
+        // un toque de Alt lo permite. Se reintenta hasta que DOSBox sea la ventana activa.
+        for (int i = 0; i < 5; i++) {
+            ClientToScreenLib.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 0, 0);
+            ClientToScreenLib.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 2, 0);
+            User32.INSTANCE.SetForegroundWindow(h);
+            sleep(150);
+            if (h.equals(User32.INSTANCE.GetForegroundWindow())) return;
+        }
+        throw new LegacyException("No se pudo poner DOSBox en primer plano");
+    }
+
+    private static void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /** Area cliente (sin barra de titulo ni bordes) en coordenadas de pantalla. */
@@ -64,7 +91,7 @@ public final class DosboxWindow {
         RECT r = new RECT();
         User32.INSTANCE.GetClientRect(h, r);
         POINT origin = new POINT(0, 0);
-        User32.INSTANCE.ClientToScreen(h, origin);
+        ClientToScreenLib.INSTANCE.ClientToScreen(h, origin);
         return new Rectangle(origin.x, origin.y, r.right - r.left, r.bottom - r.top);
     }
 }

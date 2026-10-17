@@ -24,6 +24,8 @@ import static sl.p3.ScreenParser.has;
  */
 public final class LegacyService {
     private static final int ROWS_PER_PAGE = 18;
+    /** Esperas maximas (ms): respuesta normal de la aplicacion y busqueda por nombre (recorre los registros). */
+    private static final int SHORT_MS = 8000, SEARCH_MS = 30000;
 
     private final ReentrantLock lock = new ReentrantLock();
     private final DosboxWindow window;
@@ -50,11 +52,11 @@ public final class LegacyService {
     public int contarRegistros() {
         return locked(() -> {
             begin();
-            String t = after(() -> kb.typeChar('4'));
+            String t = waitFor(() -> kb.typeChar('4'), SHORT_MS, "CONTIENE");
             expect(t, "CONTIENE");
             int n = ScreenParser.parseCount(t)
                     .orElseThrow(() -> new LegacyException("No se pudo leer el numero de registros:\n" + t));
-            after(kb::enter);
+            waitFor(kb::enter, SHORT_MS, "ACABAR"); // vuelta al menu
             return n;
         });
     }
@@ -78,23 +80,24 @@ public final class LegacyService {
         }
         return locked(() -> {
             begin();
-            expect(after(() -> kb.typeChar('7')), "SABES EL NUMERO");
-            expect(after(() -> kb.answer('N')), "NOMBRE DEL PROGRAMA");
-            String t = after(() -> {
+            expect(waitFor(() -> kb.typeChar('7'), SHORT_MS, "SABES EL NUMERO"), "SABES EL NUMERO");
+            expect(waitFor(() -> kb.answer('N'), SHORT_MS, "NOMBRE DEL PROGRAMA"), "NOMBRE DEL PROGRAMA");
+            // La aplicacion recorre los registros uno a uno: puede tardar varios segundos.
+            String t = waitFor(() -> {
                 kb.type(name);
                 kb.enter();
-            });
+            }, SEARCH_MS, "ES ESTE", "NO HAY NINGUN");
             if (has(t, "NO HAY NINGUN")) {
-                expect(after(kb::enter), "BUSCAR ALGUNO MAS");
-                after(() -> kb.answer('N'));
+                expect(waitFor(kb::enter, SHORT_MS, "BUSCAR ALGUNO MAS"), "BUSCAR ALGUNO MAS");
+                waitFor(() -> kb.answer('N'), SHORT_MS, "ACABAR");
                 return Optional.<ProgramRecord>empty();
             }
             expect(t, "ES ESTE");
             ProgramRecord rec = ScreenParser.parseSingle(t)
                     .orElseThrow(() -> new LegacyException("No se pudo leer el programa:\n" + t));
-            expect(after(() -> kb.answer('S')), "ALTERAR");
-            expect(after(() -> kb.answer('N')), "BUSCAR ALGUNO MAS");
-            after(() -> kb.answer('N'));
+            expect(waitFor(() -> kb.answer('S'), SHORT_MS, "ALTERAR"), "ALTERAR");
+            expect(waitFor(() -> kb.answer('N'), SHORT_MS, "BUSCAR ALGUNO MAS"), "BUSCAR ALGUNO MAS");
+            waitFor(() -> kb.answer('N'), SHORT_MS, "ACABAR");
             return Optional.of(rec);
         });
     }
@@ -119,7 +122,7 @@ public final class LegacyService {
         return locked(() -> {
             int total = contarRegistros();
             begin();
-            String header = after(() -> kb.typeChar('6'));
+            String header = waitFor(() -> kb.typeChar('6'), SHORT_MS, "LISTADO DE DATOS");
             expect(header, "LISTADO DE DATOS");
             if (!has(header, "ANTIGUEDAD"))
                 throw new LegacyException("El orden actual no es ANTIGUEDAD:\n" + header);
@@ -127,7 +130,8 @@ public final class LegacyService {
             List<ProgramRecord> all = new ArrayList<>();
             int expected = 1;
             int maxPages = total / ROWS_PER_PAGE + 3;
-            BufferedImage img = screen.captureAfter(kb::enter); // "ENTER PARA VER DESDE EL PRINCIPIO"
+            // "ENTER PARA VER DESDE EL PRINCIPIO": la primera pagina empieza en el registro 1
+            BufferedImage img = screen.captureUntil(kb::enter, pageStartsAt(1, total), SHORT_MS);
             for (int page = 0; page < maxPages; page++) {
                 final int first = expected;
                 String text = screen.ocrBest(img,
@@ -139,10 +143,11 @@ public final class LegacyService {
                 all.addAll(rows);
                 expected = rows.get(rows.size() - 1).numero() + 1;
                 if (expected > total) {
-                    after(() -> kb.typeChar('X')); // cualquier tecla que no sea espacio vuelve al menu
+                    // Ultima pagina: cualquier tecla que no sea espacio (y tambien otro espacio) vuelve al menu.
+                    waitFor(() -> kb.typeChar('X'), SHORT_MS, "ACABAR");
                     break;
                 }
-                img = screen.captureAfter(kb::space);
+                img = screen.captureUntil(kb::space, pageStartsAt(expected, total), SHORT_MS);
             }
             if (expected <= total)
                 throw new LegacyException("Listado incompleto: " + (expected - 1) + " de " + total);
@@ -150,6 +155,36 @@ public final class LegacyService {
             List<ProgramRecord> result = new ArrayList<>();
             for (ProgramRecord r : all) if (r.estaEnCinta(id)) result.add(r);
             return result;
+        });
+    }
+
+    // ------------------------------------------------- herramientas de desarrollo
+
+    /**
+     * Recorre el listado completo (opcion 6) y guarda cada pantalla tal cual se captura, sin OCR.
+     * Sirve para construir el corpus con el que se mide el OCR y se aprende la fuente de DOSBox.
+     * Solo pulsa 6, Enter y espacio: no modifica datos.
+     */
+    public int capturarCorpus(java.nio.file.Path dir) {
+        return locked(() -> {
+            begin();
+            try {
+                screen.save(screen.capture(), dir.resolve("menu.png"));
+                int n = 0;
+                BufferedImage prev = screen.captureAfter(() -> kb.typeChar('6'));
+                screen.save(prev, dir.resolve("listado-cabecera.png"));
+                prev = screen.captureAfter(kb::enter);
+                for (int page = 1; page <= 50; page++) {
+                    screen.save(prev, dir.resolve(String.format("listado-%02d.png", page)));
+                    n = page;
+                    BufferedImage next = screen.captureAfter(kb::space);
+                    if (ScreenReader.sameImage(prev, next)) break; // la pantalla ya no cambia
+                    prev = next;
+                }
+                return n;
+            } catch (java.io.IOException e) {
+                throw new LegacyException("No se pudo guardar el corpus", e);
+            }
         });
     }
 
@@ -175,15 +210,59 @@ public final class LegacyService {
     }
 
     /**
-     * Recuperacion de emergencia: solo pulsa Enter (nunca S) hasta ver el menu. Enter es la opcion
-     * "vacia" de las preguntas S/N, asi que no altera datos.
+     * Recuperacion de emergencia (por ejemplo tras un error a mitad de una operacion): mira la
+     * pantalla y responde lo que lleva al menu sin alterar datos. NUNCA envia 'S'; a toda pregunta
+     * S/N se contesta 'N'. Si no reconoce la pantalla pulsa Enter.
      */
     private void recoverToMenu() {
-        for (int i = 0; i < 6; i++) {
-            String t = after(kb::enter);
+        String t = screen.ocr(screen.captureStable());
+        for (int i = 0; i < 10; i++) {
             if (isMenu(t)) return;
+            final String screenText = t;
+            if (has(t, "OTRA TECLA PARA ACABAR")) {           // listado: cualquier tecla que no sea espacio
+                t = after(() -> kb.typeChar('X'));
+            } else if (has(t, "ES ESTE") || has(t, "ALTERAR") || has(t, "BUSCAR ALGUNO MAS")
+                    || has(t, "SABES EL NUMERO")) {            // preguntas S/N de la busqueda
+                t = after(() -> kb.answer('N'));
+            } else if (has(t, "NOMBRE DEL PROGRAMA") && !has(t, "NO HAY NINGUN")) {
+                t = after(() -> {                              // pide un nombre: uno que no existe
+                    kb.type("ZZZZQ");
+                    kb.enter();
+                });
+            } else {
+                t = after(kb::enter);
+            }
+            if (t.equals(screenText) && !isMenu(t)) t = after(kb::enter);
         }
-        throw new LegacyException("La aplicacion legada no esta en el menu y no se pudo recuperar");
+        if (isMenu(t)) return;
+        throw new LegacyException("La aplicacion legada no esta en el menu y no se pudo recuperar:\n" + t);
+    }
+
+    /**
+     * Ejecuta la accion y espera hasta que en pantalla aparezca alguna de las frases (o se agote el
+     * tiempo). Devuelve el texto de la pantalla; quien llama comprueba con {@link #expect} que es
+     * la esperada, y si no lo es el mensaje de error incluye lo que habia en pantalla.
+     */
+    private String waitFor(Runnable action, int timeoutMs, String... phrases) {
+        BufferedImage img = screen.captureUntil(action, t -> {
+            for (String p : phrases) if (has(t, p)) return true;
+            return false;
+        }, timeoutMs);
+        return screen.ocr(img);
+    }
+
+    /**
+     * La pantalla es una pagina COMPLETA del listado que empieza en el registro {@code n}: tiene todas
+     * sus filas (18, o las que queden hasta {@code total}). La aplicacion dibuja las filas poco a poco y
+     * el aviso "PULSA SPACE" de la pagina anterior sigue en pantalla mientras tanto, asi que ninguna de
+     * las dos cosas basta por separado para saber que la pagina ha terminado de pintarse.
+     */
+    private static java.util.function.Predicate<String> pageStartsAt(int n, int total) {
+        int expectedRows = Math.min(ROWS_PER_PAGE, total - n + 1);
+        return t -> {
+            List<ProgramRecord> rows = ScreenParser.parseListingPage(t);
+            return has(t, "PULSA SPACE") && rows.size() == expectedRows && rows.get(0).numero() == n;
+        };
     }
 
     /** Ejecuta la accion y devuelve el texto OCR de la pantalla resultante. */

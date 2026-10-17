@@ -25,11 +25,14 @@ public final class ScreenReader {
     private final DosboxWindow window;
     private final Robot robot;
     private final Tesseract1 tess;
+    /** Lector por plantillas (null si ocr.engine=tesseract). */
+    private final GlyphReader glyph;
     private int debugCounter = 0;
 
     public ScreenReader(Config cfg, DosboxWindow window) {
         this.cfg = cfg;
         this.window = window;
+        this.glyph = cfg.ocrEngine.equalsIgnoreCase("glyph") ? new GlyphReader() : null;
         try {
             this.robot = new Robot();
         } catch (AWTException e) {
@@ -78,6 +81,23 @@ public final class ScreenReader {
         return waitStable(current);
     }
 
+    /**
+     * Ejecuta la accion y espera hasta que el texto de la pantalla cumpla {@code ready} (p. ej. aparece
+     * la frase de la pregunta siguiente) y se estabilice. Necesario cuando la aplicacion tarda en
+     * responder (la busqueda recorre los 763 registros) y mientras tanto la pantalla no cambia.
+     * Si se agota {@code timeoutMs} devuelve la ultima captura para que el llamador informe del error.
+     */
+    public BufferedImage captureUntil(Runnable action, Predicate<String> ready, int timeoutMs) {
+        action.run();
+        long deadline = System.currentTimeMillis() + timeoutMs;
+        BufferedImage img = capture();
+        while (!ready.test(ocr(img)) && System.currentTimeMillis() < deadline) {
+            sleep(cfg.pollIntervalMs);
+            img = capture();
+        }
+        return waitStable(img);
+    }
+
     private BufferedImage waitStable(BufferedImage start) {
         BufferedImage last = start;
         long deadline = System.currentTimeMillis() + cfg.stableTimeoutMs;
@@ -88,6 +108,10 @@ public final class ScreenReader {
             last = next;
         }
         return last; // TODO: avisar en el log de que la pantalla no llego a estabilizarse
+    }
+
+    static boolean sameImage(BufferedImage a, BufferedImage b) {
+        return same(a, b);
     }
 
     private static boolean same(BufferedImage a, BufferedImage b) {
@@ -110,7 +134,7 @@ public final class ScreenReader {
      */
     public String ocrBest(BufferedImage img, Predicate<String> valid) {
         String text = ocr(img);
-        if (valid.test(text)) return text;
+        if (valid.test(text) || glyph != null) return text; // el lector por plantillas es exacto: no hay variantes
         for (int[] v : VARIANTS) {
             text = ocrRaw(img, v[0], v[1]);
             if (valid.test(text)) return text;
@@ -119,6 +143,10 @@ public final class ScreenReader {
     }
 
     private String ocrRaw(BufferedImage img, int scale, int threshold) {
+        if (glyph != null) {
+            saveDebug(img);
+            return glyph.read(img);
+        }
         BufferedImage prepared = preprocess(img, Math.max(1, scale), threshold, cfg.ocrInvert);
         saveDebug(prepared);
         try {
