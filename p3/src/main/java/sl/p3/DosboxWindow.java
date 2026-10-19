@@ -23,20 +23,28 @@ import java.util.Optional;
  * programa, cuyo titulo es "DOSBox 0.74, Cpu speed: ..."). Aqui se descarta la de estado. Si hay
  * mas de una instancia del programa abierta se usa la primera que devuelva Windows.
  *
- * TODO: comprobar con escalado de pantalla distinto del 100 % que las coordenadas de la ventana
- * (pixeles fisicos) coinciden con las de Robot (pixeles logicos). Si no, usar capture.* en la config.
+ * Las coordenadas de Windows (pixeles fisicos) y las de Robot
+ * coinciden porque Main fija sun.java2d.uiScale=1.
  */
 public final class DosboxWindow {
     /** Funciones de user32 que jna-platform no trae en User32: se declaran aqui. */
-    private interface ClientToScreenLib extends StdCallLibrary {
-        ClientToScreenLib INSTANCE = Native.load("user32", ClientToScreenLib.class);
+    private interface MoreUser32 extends StdCallLibrary {
+        MoreUser32 INSTANCE = Native.load("user32", MoreUser32.class);
 
         boolean ClientToScreen(HWND hWnd, POINT lpPoint);
 
         void keybd_event(byte bVk, byte bScan, int dwFlags, int dwExtraInfo);
+
+        boolean IsIconic(HWND hWnd);
+
+        HWND WindowFromPoint(POINT.ByValue point);
     }
 
-    /** Maximo que se espera a que aparezca la ventana de DOSBox (ms). */
+    private static final int GA_ROOT = 2, MONITOR_DEFAULTTONULL = 0;
+    /** Máximo que se espera a que la ventana deje de estar minimizada tras pedir que se restaure (ms). */
+    private static final int RESTORE_WAIT_MS = 3000;
+
+    /** Máximo que se espera a que aparezca la ventana de DOSBox (ms). */
     private static final int WINDOW_WAIT_MS = 20000;
 
     private final String titlePrefix;
@@ -66,7 +74,7 @@ public final class DosboxWindow {
 
     /**
      * Espera hasta {@code timeoutMs} a que exista la ventana. arrancar.bat lanza DOSBox y el servidor a la vez, sin
-     * pausa fija, asi que la primera operacion puede llegar antes de que DOSBox haya abierto su ventana.
+     * pausa fija, asi que la primera operación puede llegar antes de que DOSBox haya abierto su ventana.
      */
     public HWND await(int timeoutMs) {
         long deadline = System.currentTimeMillis() + timeoutMs;
@@ -78,20 +86,74 @@ public final class DosboxWindow {
         return h.orElseGet(this::require); // si sigue sin aparecer, require() lanza el error con la explicacion
     }
 
-    /** Restaura (si estaba minimizada) y da el foco a la ventana (esperandola si aun no ha aparecido). */
+    /**
+     * Restaura (si estaba minimizada) y da el foco a la ventana (esperandola si aún no ha aparecido). Después comprueba
+     * que se ve entera ({@link #problema()}): Robot captura los pixeles de la pantalla, y si otra ventana tapa DOSBox se
+     * leería esa.
+     */
     public void focus() {
         HWND h = await(WINDOW_WAIT_MS);
-        User32.INSTANCE.ShowWindow(h, WinUser.SW_RESTORE);
-        // Windows solo deja pasar al frente a quien acaba de recibir una entrada de teclado:
-        // un toque de Alt lo permite. Se reintenta hasta que DOSBox sea la ventana activa.
+        if (MoreUser32.INSTANCE.IsIconic(h)) {
+            User32.INSTANCE.ShowWindow(h, WinUser.SW_RESTORE);
+            long deadline = System.currentTimeMillis() + RESTORE_WAIT_MS;
+            while (MoreUser32.INSTANCE.IsIconic(h) && System.currentTimeMillis() < deadline) sleep(100);
+            sleep(300); // la animación de restaurar sigue un momento despues de dejar de estar minimizada
+        }
+        // Windows solo deja pasar al frente a quien acaba de recibir una entrada de teclado.
+        //  Se reintenta hasta que DOSBox sea la ventana activa.
         for (int i = 0; i < 5; i++) {
-            ClientToScreenLib.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 0, 0);
-            ClientToScreenLib.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 2, 0);
+            MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 0, 0);
+            MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 2, 0);
             User32.INSTANCE.SetForegroundWindow(h);
             sleep(150);
-            if (h.equals(User32.INSTANCE.GetForegroundWindow())) return;
+            if (h.equals(User32.INSTANCE.GetForegroundWindow())) {
+                String p = problema();
+                if (p != null) throw new LegacyException(p);
+                return;
+            }
         }
-        throw new LegacyException("No se pudo poner DOSBox en primer plano");
+        throw new LegacyException("No se pudo poner DOSBox en primer plano (la ventana activa es "
+                + describe(User32.INSTANCE.GetForegroundWindow()) + ").");
+    }
+
+    /**
+     * Comprueba que el robot puede trabajar: DOSBox existe, no esta minimizado, es la ventana activa (las teclas van a
+     * la ventana activa) y su área cliente se ve entera, sin otra ventana encima ni fuera de la pantalla. Devuelve una
+     * explicación para el usuario, o null si todo esta bien. Se mira en 9 puntos repartidos por el área cliente, lejos
+     * de las esquinas (por el redondeo).
+     */
+    public String problema() {
+        Optional<HWND> found = find();
+        if (found.isEmpty()) return "No se encuentra la ventana de DOSBox: se ha cerrado. Vuelve a abrir arrancar.bat.";
+        HWND h = found.get();
+        if (MoreUser32.INSTANCE.IsIconic(h)) return "La ventana de DOSBox esta minimizada.";
+        HWND fg = User32.INSTANCE.GetForegroundWindow();
+        if (!h.equals(fg))
+            return "DOSBox ha dejado de ser la ventana activa (ahora es " + describe(fg) + "). No toques el teclado ni"
+                    + " el raton mientras trabaja el robot, y vuelve a intentarlo.";
+        Rectangle a = clientArea();
+        for (int fy = 1; fy <= 3; fy++) {
+            for (int fx = 1; fx <= 3; fx++) {
+                POINT.ByValue p = new POINT.ByValue(a.x + a.width * fx / 4, a.y + a.height * fy / 4);
+                if (User32.INSTANCE.MonitorFromPoint(p, MONITOR_DEFAULTTONULL) == null)
+                    return "La ventana de DOSBox se sale de la pantalla: muevela para que se vea entera.";
+                HWND at = MoreUser32.INSTANCE.WindowFromPoint(p);
+                HWND root = at == null ? null : User32.INSTANCE.GetAncestor(at, GA_ROOT);
+                if (!h.equals(root))
+                    return "Hay otra ventana encima de DOSBox (" + describe(root) + "): apartala o cierrala para que"
+                            + " DOSBox se vea entero.";
+            }
+        }
+        return null;
+    }
+
+    /** "'titulo'" de una ventana, para los mensajes de error. */
+    private static String describe(HWND h) {
+        if (h == null) return "ninguna";
+        char[] buf = new char[512];
+        User32.INSTANCE.GetWindowText(h, buf, buf.length);
+        String t = Native.toString(buf).trim();
+        return t.isEmpty() ? "una ventana sin titulo" : "'" + t + "'";
     }
 
     private static void sleep(int ms) {
@@ -102,13 +164,13 @@ public final class DosboxWindow {
         }
     }
 
-    /** Area cliente (sin barra de titulo ni bordes) en coordenadas de pantalla. */
+    /** Área cliente (sin barra de título ni bordes) en coordenadas de pantalla. */
     public Rectangle clientArea() {
         HWND h = require();
         RECT r = new RECT();
         User32.INSTANCE.GetClientRect(h, r);
         POINT origin = new POINT(0, 0);
-        ClientToScreenLib.INSTANCE.ClientToScreen(h, origin);
+        MoreUser32.INSTANCE.ClientToScreen(h, origin);
         return new Rectangle(origin.x, origin.y, r.right - r.left, r.bottom - r.top);
     }
 }

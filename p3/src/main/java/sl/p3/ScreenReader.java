@@ -107,7 +107,10 @@ public final class ScreenReader {
             if (same(last, next)) return next;
             last = next;
         }
-        return last; // TODO: avisar en el log de que la pantalla no llego a estabilizarse
+        // No es un error (se sigue con la ultima captura), pero si luego falla algo ayuda a saber por qué
+        System.err.println("Aviso: la pantalla de DOSBox no llego a estabilizarse en " + cfg.stableTimeoutMs
+                + " ms (sigue cambiando). Se usa la ultima captura.");
+        return last;
     }
 
     static boolean sameImage(BufferedImage a, BufferedImage b) {

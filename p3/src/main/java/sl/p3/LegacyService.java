@@ -159,7 +159,7 @@ public final class LegacyService {
                 List<ProgramRecord> rows = ScreenParser.parseListingPage(text);
                 List<String> problems = ScreenParser.checkPage(rows, first);
                 if (!problems.isEmpty())
-                    throw new LegacyException("Pagina " + (page + 1) + " ilegible: " + problems + "\n" + text);
+                    throw new LegacyException(conCausa("Pagina " + (page + 1) + " ilegible: " + problems, text));
                 all.addAll(rows);
                 expected = rows.get(rows.size() - 1).numero() + 1;
                 if (expected > total) {
@@ -262,12 +262,12 @@ public final class LegacyService {
             if (t.equals(screenText) && !isMenu(t)) t = after(kb::enter);
         }
         if (isMenu(t)) return;
-        throw new LegacyException("La aplicacion legada no esta en el menu y no se pudo recuperar:\n" + t);
+        throw new LegacyException(conCausa("La aplicacion legada no esta en el menu y no se pudo recuperar", t));
     }
 
     /**
-     * Ejecuta la accion y espera hasta que en pantalla aparezca alguna de las frases (o se agote el
-     * tiempo). Devuelve el texto de la pantalla; quien llama comprueba con {@link #expect} que es
+     * Ejecuta la acción y espera hasta que en pantalla aparezca alguna de las frases (o se agote el
+     * tiempo). Devuelve el texto de la pantalla, quien llama comprueba con {@link #expect} que es
      * la esperada, y si no lo es el mensaje de error incluye lo que habia en pantalla.
      */
     private String waitFor(Runnable action, int timeoutMs, String... phrases) {
@@ -301,8 +301,16 @@ public final class LegacyService {
         return screen.ocr(screen.captureAfter(action));
     }
 
-    private static void expect(String text, String phrase) {
+    private void expect(String text, String phrase) {
         if (!has(text, phrase))
-            throw new LegacyException("Pantalla inesperada (se esperaba '" + phrase + "'):\n" + text);
+            throw new LegacyException(conCausa("Pantalla inesperada (se esperaba '" + phrase + "')", text));
+    }
+
+    /**
+     * Mensaje de error con lo que se ha leído en pantalla y, delante, la causa probable si se ve una.
+     */
+    private String conCausa(String msg, String screenText) {
+        String causa = window.problema();
+        return (causa == null ? "" : causa + "\n") + msg + ":\n" + screenText;
     }
 }
