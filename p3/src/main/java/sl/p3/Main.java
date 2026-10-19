@@ -25,7 +25,12 @@ public final class Main {
 
         switch (cmd) {
             case "servidor" -> {
-                new WebServer(cfg, legacy).start();
+                try {
+                    new WebServer(cfg, legacy).start();
+                } catch (java.net.BindException e) {
+                    System.err.println(puertoOcupado(cfg.port));
+                    System.exit(1);
+                }
                 String url = "http://localhost:" + cfg.port + "/";
                 System.out.println("Servidor en " + url + "  (Ctrl+C para parar)");
                 // arrancar.bat pasa --abrir: el navegador se abre cuando el servidor ya escucha, y con el puerto real.
@@ -53,6 +58,15 @@ public final class Main {
             case "cinta" -> legacy.listarCinta(args[1]).forEach(System.out::println);
             default -> System.err.println("Comando desconocido: " + cmd);
         }
+    }
+
+    /** Sin acentos porque la consola de Windows (cmd) no usa UTF-8, no porque no sepamos. arrancar.bat comprueba lo mismo antes de abrir DOSBox. */
+    static String puertoOcupado(int port) {
+        return "\nERROR: el puerto " + port + " ya lo esta usando otro programa y el servidor no puede arrancar.\n"
+                + "  - Si ya hay otra ventana de arrancar.bat abierta, usa esa (http://localhost:" + port + "/)\n"
+                + "    o cierrala antes de volver a arrancar.\n"
+                + "  - Si no, abre config.properties, cambia server.port=" + port + " por otro puerto libre\n"
+                + "    (por ejemplo server.port=" + (port + 1) + ") y vuelve a hacer doble clic en arrancar.bat.\n";
     }
 
     private static void abrirNavegador(String url) {
