@@ -124,7 +124,10 @@ public final class ScreenParser {
         return n.toUpperCase();
     }
 
-    /** Deja solo A-Z, 0-9 y '-'. TODO: corregir confusiones tipicas del OCR (B/8, E/F, O/0) si aparecen. */
+    /**
+     * Deja solo A-Z, 0-9 y '-'. No se corrigen confusiones como B/8 u O/0: el lector por plantillas no
+     * las comete, y con Tesseract una cinta mal leída lo detectamos al validar la página.
+     */
     static String cleanCinta(String raw) {
         return raw.toUpperCase().replaceAll("[^A-Z0-9-]", "");
     }

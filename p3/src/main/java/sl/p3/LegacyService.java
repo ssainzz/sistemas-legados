@@ -129,16 +129,14 @@ public final class LegacyService {
      * (desde el principio) -> se recorren todas las paginas con ESPACIO (18 filas por pagina) y se
      * filtran las filas cuya cinta contiene el identificador (A-45 pertenece a A y a 45).
      *
-     * No se puede parar antes de la ultima pagina: los programas en varias cintas aparecen fuera de
-     * su sitio (p. ej. el registro 20 esta en B-E). Cada pagina se valida con la numeracion
-     * consecutiva y se reintenta el OCR con otros preprocesados si no cuadra.
-     *
-     * TODO: verificar como termina el listado (ultima pagina: prompt "PULSA SPACE..." o vuelta al menu).
-     * TODO: si el orden no fuera ANTIGUEDAD habria que reordenar (opcion 3 -> 4, solo en memoria; no grabar).
      */
     public List<ProgramRecord> listarCinta(String cinta) {
-        String id = cinta.trim().toUpperCase();
-        if (!id.matches("[A-Z0-9]{1,3}")) throw new IllegalArgumentException("Cinta no valida: " + cinta);
+        String raw = cinta.trim().toUpperCase();
+        // Una cinta es una letra o un numero (en los datos: A-Z y 0-33). Lo demas no puede estar en ninguna cinta, y
+        // comprobarlo en la aplicacion cuesta recorrer el listado entero (~25 s).
+        if (!raw.matches("[A-Z]|[0-9]{1,3}"))
+            throw new IllegalArgumentException("Cinta no valida: '" + cinta + "' (una letra A-Z o un numero)");
+        String id = raw.matches("[0-9]+") ? String.valueOf(Integer.parseInt(raw)) : raw; // "05" es la cinta 5
         return locked(() -> {
             int total = contarRegistros();
             begin();
@@ -283,10 +281,10 @@ public final class LegacyService {
     }
 
     /**
-     * La pantalla es una pagina COMPLETA del listado que empieza en el registro {@code n}: tiene todas
-     * sus filas (18, o las que queden hasta {@code total}). La aplicacion dibuja las filas poco a poco y
-     * el aviso "PULSA SPACE" de la pagina anterior sigue en pantalla mientras tanto, asi que ninguna de
-     * las dos cosas basta por separado para saber que la pagina ha terminado de pintarse.
+     * La pantalla es una pagina completa del listado que empieza en el registro {@code n}: tiene todas
+     * sus filas (18, o las que queden hasta {@code total}). La aplicación dibuja las filas poco a poco y
+     * el aviso "PULSA SPACE" de la página anterior sigue en pantalla mientras tanto, así que ninguna de
+     * las dos cosas basta por separado para saber que la página ha terminado de pintarse.
      */
     private static Predicate<String> pageStartsAt(int n, int total) {
         int expectedRows = Math.min(ROWS_PER_PAGE, total - n + 1);
@@ -296,7 +294,7 @@ public final class LegacyService {
         };
     }
 
-    /** Ejecuta la accion y devuelve el texto OCR de la pantalla resultante. */
+    /** Ejecuta la acción y devuelve el texto OCR de la pantalla resultante. */
     private String after(Runnable action) {
         return screen.ocr(screen.captureAfter(action));
     }
@@ -307,7 +305,7 @@ public final class LegacyService {
     }
 
     /**
-     * Mensaje de error con lo que se ha leído en pantalla y, delante, la causa probable si se ve una.
+     * Mensaje de error con lo que se ha leído en pantalla y, delante, la causa probable si se ve
      */
     private String conCausa(String msg, String screenText) {
         String causa = window.problema();

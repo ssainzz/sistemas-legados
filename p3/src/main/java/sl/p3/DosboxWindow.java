@@ -43,6 +43,8 @@ public final class DosboxWindow {
     private static final int GA_ROOT = 2, MONITOR_DEFAULTTONULL = 0;
     /** Máximo que se espera a que la ventana deje de estar minimizada tras pedir que se restaure (ms). */
     private static final int RESTORE_WAIT_MS = 3000;
+    /** Máximo que se espera a que se aparte lo que tapa DOSBox (por ejemplo, un menu que se esta cerrando) (ms). */
+    private static final int COVERED_WAIT_MS = 2000;
 
     /** Máximo que se espera a que aparezca la ventana de DOSBox (ms). */
     private static final int WINDOW_WAIT_MS = 20000;
@@ -102,12 +104,22 @@ public final class DosboxWindow {
         // Windows solo deja pasar al frente a quien acaba de recibir una entrada de teclado.
         //  Se reintenta hasta que DOSBox sea la ventana activa.
         for (int i = 0; i < 5; i++) {
+            // Alt se suelta DESPUES de cambiar de ventana: los programas abren su menu al soltar Alt, asi que el
+            // soltar le llega a DOSBox (donde no hace nada) y no a la ventana que estaba delante.
             MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 0, 0);
-            MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 2, 0);
             User32.INSTANCE.SetForegroundWindow(h);
+            MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 2, 0);
             sleep(150);
             if (h.equals(User32.INSTANCE.GetForegroundWindow())) {
+                // El toque de Alt abre el menu de algunos programas (Opera, por ejemplo), y ese menu, que es una
+                // ventana sin titulo, puede quedar un momento encima de DOSBox. Se cierra solo al cambiar la ventana
+                // activa: se espera a que desaparezca antes de dar el error (PROBLEMAS.md, 31).
+                long deadline = System.currentTimeMillis() + COVERED_WAIT_MS;
                 String p = problema();
+                while (p != null && System.currentTimeMillis() < deadline) {
+                    sleep(100);
+                    p = problema();
+                }
                 if (p != null) throw new LegacyException(p);
                 return;
             }
