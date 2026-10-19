@@ -5,23 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZX Spectrum Database</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
     <style>
+        /* Por si lo usamos sin internet usaremos Inter si esta instalada y, si no, la de Windows (Segoe UI).
+           El texto monoespaciado lo pone .font-mono de Tailwind (Consolas en Windows). */
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
             background-color: #F4F1EA; /* Color crema suave */
         }
-        .font-mono {
-            font-family: 'JetBrains Mono', monospace;
-        }
-        
+
         /* Sombras sólidas Neo-brutalistas */
         .brutal-shadow {
             box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
@@ -58,6 +49,10 @@
             border: 2px solid #F4F1EA;
         }
     </style>
+
+    <!-- Tailwind CSS ya generado (antes si no había internet la web salía sin estilos).
+         Va detras del <style> anterior, en el mismo orden en que lo insertaba el CDN, para que se vea igual. -->
+    <link rel="stylesheet" href="tailwind.css">
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col p-4 md:p-6 gap-4 text-black box-border max-w-7xl mx-auto">
 
