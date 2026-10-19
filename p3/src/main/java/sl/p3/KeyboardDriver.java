@@ -8,26 +8,18 @@ import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
 /**
- * Envia teclas a la aplicacion legada con java.awt.Robot, SIEMPRE tecla a tecla y con una pausa.
+ * Envía teclas a la aplicación legada, una a una y con pausa: si se escriben de golpe, GW-BASIC toma algunas por
+ * teclas de función (salen TRON, KEY...). Las mayúsculas llevan Shift, y S/N siempre en mayúscula.
  *
- * Importante (comprobado a mano): si se escribe una cadena de golpe, GW-BASIC/DOSBox interpreta
- * parte de las teclas como teclas de funcion (aparecen macros como TRON, TROFF o KEY en la linea).
- * Por eso cada caracter es un keyPress + keyRelease con un delay, y las mayusculas llevan Shift
- * explicito. La aplicacion solo acepta S/N en MAYUSCULA.
- *
- * Se soportan A-Z, a-z, 0-9, espacio y los signos que aparecen en los nombres de DATOS.DAT
- * ({@link #SIGNOS}). Las letras, numeros y espacio ocupan la misma tecla en cualquier distribucion
- * y van con Robot. Los signos no: el apostrofo, por ejemplo, esta junto al 0 en el teclado espanol
- * y junto al Enter en el ingles. Para ellos se pregunta a Windows que tecla (y si lleva Shift)
- * produce el caracter en la distribucion actual (VkKeyScan) y se pulsa esa tecla con su codigo de
- * exploracion (MapVirtualKey + keybd_event). DOSBox usa la misma distribucion que Windows
- * (keyboardlayout=auto), asi que recibe el mismo caracter.
+ * Letras, números y espacio van con Robot. Los signos ({@link #SIGNOS}) cambian de tecla según la distribución del
+ * teclado: se pregunta a Windows cuál es (VkKeyScan) y se pulsa con su código de exploración, que es lo que lee
+ * DOSBox (con keyboardlayout=auto usa la misma distribución que Windows).
  */
 public final class KeyboardDriver {
-    /** Signos que aparecen en nombres reales de DATOS.DAT ("KNIGHT'S LORE", "B.C. BILL", ...). */
+    /** Signos de los nombres de DATOS.DAT ("KNIGHT'S LORE", "B.C. BILL"...). */
     static final String SIGNOS = "-'.!&";
 
-    /** Funciones de user32 para pulsar los signos segun la distribucion de teclado de Windows. */
+    /** Funciones de user32 para pulsar los signos. */
     private interface Win32Keys extends StdCallLibrary {
         Win32Keys INSTANCE = Native.load("user32", Win32Keys.class);
 
@@ -52,7 +44,7 @@ public final class KeyboardDriver {
         this.delayMs = delayMs;
     }
 
-    /** Pulsa un caracter (tecla del menu, letra de respuesta...). */
+    /** Pulsa un carácter (opción del menú, respuesta...). */
     public void typeChar(char c) {
         if (SIGNOS.indexOf(c) >= 0) {
             typeSigno(c);
@@ -67,7 +59,7 @@ public final class KeyboardDriver {
         pause();
     }
 
-    /** Escribe un texto caracter a caracter (el texto se pasa tal cual: mayusculas = Shift). */
+    /** Escribe el texto tal cual, carácter a carácter. */
     public void type(String text) {
         for (char c : text.toCharArray()) typeChar(c);
     }
@@ -80,7 +72,7 @@ public final class KeyboardDriver {
         tap(KeyEvent.VK_SPACE);
     }
 
-    /** Respuesta S/N de la aplicacion: letra mayuscula + Enter. */
+    /** Respuesta S/N: letra mayúscula y Enter. */
     public void answer(char upperLetter) {
         typeChar(upperLetter);
         enter();
@@ -114,12 +106,9 @@ public final class KeyboardDriver {
         throw new IllegalArgumentException("Caracter no soportado por el teclado: '" + c + "'");
     }
 
-    // ------------------------------------------------- signos segun la distribucion
+    // ------------------------------------------------- signos según la distribución
 
-    /**
-     * Tecla de Windows (byte bajo) y Shift (bit 0x100) que producen el signo en la distribucion
-     * actual, o -1 si no existe o necesita Ctrl/Alt (AltGr), que no se envian.
-     */
+    /** Tecla (byte bajo) y Shift (bit 0x100) del signo, o -1 si no existe o necesita AltGr. */
     private static int signoKey(char c) {
         int r = Win32Keys.INSTANCE.VkKeyScanW(c);
         if (r == -1 || (r & 0x600) != 0) return -1;
@@ -138,7 +127,7 @@ public final class KeyboardDriver {
         pause();
     }
 
-    /** Pulsa o suelta una tecla de Windows con su codigo de exploracion (DOSBox lee este ultimo). */
+    /** Pulsa o suelta una tecla con su código de exploración (el que lee DOSBox). */
     private static void winKey(int vk, boolean up) {
         int scan = Win32Keys.INSTANCE.MapVirtualKeyW(vk, MAPVK_VK_TO_VSC);
         Win32Keys.INSTANCE.keybd_event((byte) vk, (byte) scan, up ? KEYEVENTF_KEYUP : 0, 0);

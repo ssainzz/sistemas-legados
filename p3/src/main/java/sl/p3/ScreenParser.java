@@ -9,19 +9,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Analisis del texto que devuelve el OCR. Sin dependencias de pantalla ni de Robot, para poder
- * probarlo con texto de ejemplo (ver ScreenParserTest).
- *
- * Pantallas conocidas (comprobadas en la aplicacion real):
- *  - Opcion 4:  "CONTIENE 763 ARCHIVOS"
- *  - Opcion 7:  "1 - MUGSY   CONVERSACIONAL   CINTA:A"
- *  - Opcion 6:  filas "Nº NOMBRE TIPO CINTA REGISTRO", 18 por pagina, por ejemplo
- *               "20  MATCH POINT   S. DEPORTIVO   B-E   20"   (cinta B-E = el programa esta en B y en E)
+ * Texto de pantalla a datos, sin depender de la pantalla (se prueba en ScreenParserTest). Pantallas:
+ *  - Opción 4: "CONTIENE 763 ARCHIVOS"
+ *  - Opción 7: "1 - MUGSY   CONVERSACIONAL   CINTA:A"
+ *  - Opción 6: filas "Nº NOMBRE TIPO CINTA REGISTRO", 18 por página. "B-E" = cintas B y E.
  */
 public final class ScreenParser {
     private ScreenParser() {}
 
-    /** Tipos de juego que ofrece la aplicacion (pantalla "Introducir datos"). */
+    /** Tipos de juego de la aplicación (pantalla "Introducir datos"). */
     public static final List<String> TIPOS = List.of(
             "UTILIDAD", "ARCADE", "CONVERSACIONAL", "VIDEOAVENTURA",
             "SIMULADOR", "JUEGO DE MESA", "S. DEPORTIVO", "ESTRATEGIA");
@@ -35,30 +31,27 @@ public final class ScreenParser {
             Pattern.CASE_INSENSITIVE);
     private static final Pattern ROW = Pattern.compile("^(\\d{1,3})\\s+(.+?)\\s+(\\S+)\\s+(\\d{1,3})$");
 
-    /**
-     * Un programa. {@code registro} es la columna REGISTRO del listado (coincide con {@code numero}
-     * cuando el orden es por antiguedad); en la busqueda por nombre vale igual que {@code numero}.
-     */
+    /** Un programa. {@code registro} es la columna REGISTRO (igual a {@code numero} en orden de antigüedad). */
     public record ProgramRecord(int numero, String nombre, String tipo, String cinta, int registro) {
         /** "A-45" -> [A, 45]. */
         public List<String> cintas() {
             return Arrays.asList(cinta.split("-"));
         }
 
-        /** Comparacion exacta por cinta (no por subcadena: "4" no esta en "45"). */
+        /** Por cinta exacta, no por subcadena: "4" no está en "45". */
         public boolean estaEnCinta(String id) {
             return cintas().contains(id.trim().toUpperCase());
         }
     }
 
-    // ---------------------------------------------------------------- opcion 4
+    // ---------------------------------------------------------------- opción 4
 
     public static Optional<Integer> parseCount(String ocr) {
         Matcher m = COUNT.matcher(normalize(ocr));
         return m.find() ? Optional.of(Integer.parseInt(m.group(1))) : Optional.empty();
     }
 
-    // ---------------------------------------------------------------- opcion 7
+    // ---------------------------------------------------------------- opción 7
 
     public static Optional<ProgramRecord> parseSingle(String ocr) {
         for (String line : keepCase(ocr).split("\\R")) {
@@ -71,9 +64,9 @@ public final class ScreenParser {
         return Optional.empty();
     }
 
-    // ---------------------------------------------------------------- opcion 6
+    // ---------------------------------------------------------------- opción 6
 
-    /** Filas del listado reconocidas en una pagina. Las lineas que no encajan se ignoran. */
+    /** Filas del listado de una página (las líneas que no encajan se ignoran). */
     public static List<ProgramRecord> parseListingPage(String ocr) {
         List<ProgramRecord> rows = new ArrayList<>();
         for (String line : keepCase(ocr).split("\\R")) {
@@ -89,9 +82,8 @@ public final class ScreenParser {
     }
 
     /**
-     * Comprueba que una pagina es coherente: numeracion consecutiva desde {@code firstExpected},
-     * REGISTRO igual a Nº (orden por antiguedad), tipo reconocido. Devuelve la lista de problemas
-     * (vacia = pagina valida). Sirve para detectar errores del OCR y reintentar.
+     * Problemas de una página (vacía = correcta): numeración consecutiva desde {@code firstExpected}, REGISTRO igual
+     * a Nº y tipo reconocido.
      */
     public static List<String> checkPage(List<ProgramRecord> rows, int firstExpected) {
         List<String> problems = new ArrayList<>();
@@ -109,12 +101,12 @@ public final class ScreenParser {
 
     // ------------------------------------------------------------- utilidades
 
-    /** true si el texto de pantalla contiene la frase (sin acentos, sin distinguir mayusculas). */
+    /** Si el texto contiene la frase, sin tildes ni mayúsculas. */
     public static boolean has(String screenText, String phrase) {
         return normalize(screenText).contains(normalize(phrase));
     }
 
-    /** Quita acentos pero conserva las mayusculas/minusculas (los nombres de programas las tienen). */
+    /** Quita las tildes y conserva mayúsculas y minúsculas (hay nombres con minúsculas). */
     static String keepCase(String s) {
         return Normalizer.normalize(s, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
     }
@@ -124,19 +116,16 @@ public final class ScreenParser {
         return n.toUpperCase();
     }
 
-    /**
-     * Deja solo A-Z, 0-9 y '-'. No se corrigen confusiones como B/8 u O/0: el lector por plantillas no
-     * las comete, y con Tesseract una cinta mal leída lo detectamos al validar la página.
-     */
+    /** Deja solo A-Z, 0-9 y '-'. Una cinta mal leída por Tesseract se detecta al validar la página. */
     static String cleanCinta(String raw) {
         return raw.toUpperCase().replaceAll("[^A-Z0-9-]", "");
     }
 
-    /** "ARCADE" al final de "HUNCHBACK ARCADE" -> {"HUNCHBACK", "ARCADE"}; tolera 1-2 errores de OCR. */
+    /** "HUNCHBACK ARCADE" -> {"HUNCHBACK", "ARCADE"}. Tolera 1 o 2 letras mal leídas en el tipo. */
     static String[] splitNameAndType(String middle) {
-        String orig = middle.trim();   // se conserva tal cual (hay nombres con minusculas: "McGUIGAN'S")
+        String orig = middle.trim();   // tal cual: hay nombres con minúsculas ("McGUIGAN'S")
         String m = orig.toUpperCase(); // solo para comparar con los tipos
-        // Hay programas sin tipo definido: la aplicacion muestra "---" en esa columna.
+        // Programas sin tipo: la aplicación muestra "---".
         if (m.endsWith(" " + SIN_TIPO) && m.length() > SIN_TIPO.length() + 1) {
             return new String[]{orig.substring(0, m.length() - SIN_TIPO.length()).trim(), SIN_TIPO};
         }

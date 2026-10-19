@@ -1,6 +1,6 @@
 package sl.p3;
 
-/** Error al interactuar con la aplicacion legada (pantalla inesperada, ventana no encontrada...). */
+/** Error al usar la aplicación legada (pantalla inesperada, ventana no encontrada...). */
 public class LegacyException extends RuntimeException {
     public LegacyException(String message) {
         super(message);

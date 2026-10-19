@@ -6,3 +6,5 @@ target/
 
 # Capturas y texto del OCR de depuración (debug.save=true)
 debug/
+# Datos de entrenamiento de Tesseract (se generan con el comando cajas)
+entrenamiento/datos/

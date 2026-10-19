@@ -14,26 +14,20 @@ import java.util.function.Supplier;
 import static sl.p3.ScreenParser.has;
 
 /**
- * Los tres casos de uso de la practica sobre la aplicacion BASIC. Cada operacion:
- *   1. toma un lock (solo hay un DOSBox y un teclado: las peticiones web se serializan),
- *   2. da el foco a DOSBox y comprueba que esta en el MENU,
- *   3. envia teclas y, tras cada una, espera a que aparezca la pantalla siguiente y la lee,
- *   4. deja la aplicacion otra vez en el menu.
+ * Los tres casos de uso sobre la aplicación BASIC. Cada operación toma un cerrojo (solo hay un DOSBox), da el foco a
+ * DOSBox, comprueba que está en el menú, teclea esperando cada pantalla y vuelve al menú.
  *
- * Reglas para no alterar los datos de la aplicacion legada:
- *   - Nunca se usan las opciones 1, 2, 3 ni 5 del menu (introducir, grabar, ordenar, imprimir).
- *   - Nunca se envia 'S': a "ES ESTE?" se responde N para ver el siguiente resultado, y asi la
- *     aplicacion no llega a preguntar "QUIERES ALTERAR SUS DATOS?".
+ * Para no alterar los datos: nunca se usan las opciones 1, 2, 3 ni 5, y nunca se envía 'S'.
  */
 public final class LegacyService {
     private static final int ROWS_PER_PAGE = 18;
-    /** Esperas maximas (ms): respuesta normal de la aplicacion y busqueda por nombre (recorre los registros). */
+    /** Esperas máximas (ms): respuesta normal y búsqueda por nombre, que recorre los registros. */
     private static final int SHORT_MS = 8000, SEARCH_MS = 30000;
-    /** Caracteres minimos del nombre buscado: con menos, la busqueda por subcadena da cientos de resultados. */
+    /** Mínimo de caracteres del nombre: la búsqueda es por subcadena y con menos sale casi todo. */
     public static final int MIN_NOMBRE = 3;
-    /** Maximo que la primera operacion espera a que DOSBox cargue GW-BASIC y muestre el menu (ms). */
+    /** Espera máxima al menú en la primera operación, mientras DOSBox arranca (ms). */
     private static final int STARTUP_MS = 20000;
-    /** false hasta la primera operacion: solo entonces se espera al arranque de DOSBox. */
+    /** Si ya se hizo alguna operación (solo la primera espera el arranque). */
     private boolean started;
 
     private final ReentrantLock lock = new ReentrantLock();
@@ -57,7 +51,7 @@ public final class LegacyService {
 
     // ------------------------------------------------- caso de uso 1: registros
 
-    /** Opcion 4 -> "CONTIENE n ARCHIVOS" -> Enter (vuelve al menu). */
+    /** Opción 4: "CONTIENE n ARCHIVOS" y Enter. */
     public int contarRegistros() {
         return locked(() -> {
             begin();
@@ -65,7 +59,7 @@ public final class LegacyService {
             expect(t, "CONTIENE");
             int n = ScreenParser.parseCount(t)
                     .orElseThrow(() -> new LegacyException("No se pudo leer el numero de registros:\n" + t));
-            waitFor(kb::enter, SHORT_MS, "ACABAR"); // vuelta al menu
+            waitFor(kb::enter, SHORT_MS, "ACABAR"); // vuelta al menú
             return n;
         });
     }
@@ -73,14 +67,9 @@ public final class LegacyService {
     // ---------------------------------------- caso de uso 2: programa por nombre
 
     /**
-     * Opcion 7 -> N + Enter -> NOMBRE + Enter -> (ES ESTE?) N + Enter por cada resultado ->
-     * "NO HAY NINGUN PROGRAMA" + Enter -> (BUSCAR MAS?) N + Enter -> menu.
-     *
-     * Comprobado a mano: la aplicacion distingue mayusculas y busca el texto en cualquier parte del
-     * nombre ("MONTY" encuentra tambien "AUF WIEDERSEHEN MONTY"). Muestra los resultados de uno en
-     * uno preguntando "ES ESTE?"; N pasa al siguiente y, tras el ultimo (o si no hay ninguno), sale
-     * "NO HAY NINGUN PROGRAMA CON ESE NOMBRE". Se devuelven todos, en el orden en que salen, y el
-     * nombre se escribe tal cual (sin pasarlo a mayusculas).
+     * Opción 7, N, nombre y Enter. La aplicación enseña los resultados de uno en uno ("ES ESTE?"): se responde N a
+     * cada uno hasta "NO HAY NINGUN PROGRAMA", y después N a "BUSCAR ALGUNO MAS". Distingue mayúsculas y busca por
+     * subcadena ("MONTY" también encuentra "AUF WIEDERSEHEN MONTY"), así que el nombre se escribe tal cual.
      */
     public List<ProgramRecord> buscarPorNombre(String nombre) {
         String name = nombre.trim();
@@ -97,11 +86,11 @@ public final class LegacyService {
 
             List<ProgramRecord> found = new ArrayList<>();
             Set<Integer> vistos = new HashSet<>();
-            // Siguiente pantalla valida: el aviso final, o un "ES ESTE?" con un programa aun no leido. Tras
-            // una N la pantalla anterior sigue visible un momento; con el numero se distingue de la nueva.
+            // Pantalla siguiente: el aviso final o un "ES ESTE?" con un registro nuevo (tras la N, la anterior
+            // sigue visible un momento).
             Predicate<String> siguiente = t -> has(t, "NO HAY NINGUN") || (has(t, "ES ESTE")
                     && ScreenParser.parseSingle(t).map(r -> !vistos.contains(r.numero())).orElse(false));
-            // La aplicacion recorre los registros uno a uno: cada resultado puede tardar varios segundos.
+            // Cada resultado puede tardar varios segundos: la aplicación recorre los registros uno a uno.
             String t = waitUntil(() -> {
                 kb.type(name);
                 kb.enter();
@@ -125,15 +114,12 @@ public final class LegacyService {
     // ------------------------------------------------ caso de uso 3: por cinta
 
     /**
-     * Opcion 6 (listado segun el orden, que debe ser ANTIGUEDAD = orden de grabacion) -> Enter
-     * (desde el principio) -> se recorren todas las paginas con ESPACIO (18 filas por pagina) y se
-     * filtran las filas cuya cinta contiene el identificador (A-45 pertenece a A y a 45).
-     *
+     * Opción 6 y Enter: recorre las páginas del listado (18 filas) con espacio y se queda con las de la cinta.
+     * Un programa en "A-45" está en la cinta A y en la 45. El orden debe ser ANTIGÜEDAD.
      */
     public List<ProgramRecord> listarCinta(String cinta) {
         String raw = cinta.trim().toUpperCase();
-        // Una cinta es una letra o un numero (en los datos: A-Z y 0-33). Lo demas no puede estar en ninguna cinta, y
-        // comprobarlo en la aplicacion cuesta recorrer el listado entero (~25 s).
+        // Una cinta es una letra o un número (A-Z y 0-33 en los datos): se rechaza lo demás sin recorrer el listado.
         if (!raw.matches("[A-Z]|[0-9]{1,3}"))
             throw new IllegalArgumentException("Cinta no valida: '" + cinta + "' (una letra A-Z o un numero)");
         String id = raw.matches("[0-9]+") ? String.valueOf(Integer.parseInt(raw)) : raw; // "05" es la cinta 5
@@ -148,7 +134,7 @@ public final class LegacyService {
             List<ProgramRecord> all = new ArrayList<>();
             int expected = 1;
             int maxPages = total / ROWS_PER_PAGE + 3;
-            // "ENTER PARA VER DESDE EL PRINCIPIO": la primera pagina empieza en el registro 1
+            // "ENTER PARA VER DESDE EL PRINCIPIO": la primera página empieza en el registro 1
             BufferedImage img = screen.captureUntil(kb::enter, pageStartsAt(1, total), SHORT_MS);
             for (int page = 0; page < maxPages; page++) {
                 final int first = expected;
@@ -161,7 +147,7 @@ public final class LegacyService {
                 all.addAll(rows);
                 expected = rows.get(rows.size() - 1).numero() + 1;
                 if (expected > total) {
-                    // Ultima pagina: cualquier tecla que no sea espacio (y tambien otro espacio) vuelve al menu.
+                    // Última página: cualquier tecla vuelve al menú.
                     waitFor(() -> kb.typeChar('X'), SHORT_MS, "ACABAR");
                     break;
                 }
@@ -178,11 +164,7 @@ public final class LegacyService {
 
     // ------------------------------------------------- herramientas de desarrollo
 
-    /**
-     * Recorre el listado completo (opcion 6) y guarda cada pantalla tal cual se captura, sin OCR.
-     * Sirve para construir el corpus con el que se mide el OCR y se aprende la fuente de DOSBox.
-     * Solo pulsa 6, Enter y espacio: no modifica datos.
-     */
+    /** Guarda las pantallas del listado completo en dir (el corpus de pruebas). Solo pulsa 6, Enter y espacio. */
     public int capturarCorpus(java.nio.file.Path dir) {
         return locked(() -> {
             begin();
@@ -217,10 +199,7 @@ public final class LegacyService {
         }
     }
 
-    /**
-     * Foco en DOSBox y comprobacion de que estamos en el menu principal. En la primera operacion DOSBox puede estar
-     * aun arrancando (arrancar.bat no espera): antes de intentar recuperar nada se deja que aparezca el menu solo.
-     */
+    /** Foco en DOSBox y vuelta al menú. En la primera operación antes se espera a que DOSBox termine de arrancar. */
     private void begin() {
         window.focus();
         String t = started
@@ -234,11 +213,7 @@ public final class LegacyService {
         return has(text, "BUSCAR DATOS") && has(text, "ACABAR");
     }
 
-    /**
-     * Recuperacion de emergencia (por ejemplo tras un error a mitad de una operacion): mira la
-     * pantalla y responde lo que lleva al menu sin alterar datos. NUNCA envia 'S'; a toda pregunta
-     * S/N se contesta 'N'. Si no reconoce la pantalla pulsa Enter.
-     */
+    /** Vuelve al menú tras un fallo a medias: responde según la pantalla, N a toda pregunta, Enter si no la conoce. */
     private void recoverToMenu() {
         String t = screen.ocr(screen.captureStable());
         for (int i = 0; i < 10; i++) {
@@ -247,7 +222,7 @@ public final class LegacyService {
             if (has(t, "OTRA TECLA PARA ACABAR")) {           // listado: cualquier tecla que no sea espacio
                 t = after(() -> kb.typeChar('X'));
             } else if (has(t, "ES ESTE") || has(t, "ALTERAR") || has(t, "BUSCAR ALGUNO MAS")
-                    || has(t, "SABES EL NUMERO")) {            // preguntas S/N de la busqueda
+                    || has(t, "SABES EL NUMERO")) {            // preguntas S/N de la búsqueda
                 t = after(() -> kb.answer('N'));
             } else if (has(t, "NOMBRE DEL PROGRAMA") && !has(t, "NO HAY NINGUN")) {
                 t = after(() -> {                              // pide un nombre: uno que no existe
@@ -263,11 +238,7 @@ public final class LegacyService {
         throw new LegacyException(conCausa("La aplicacion legada no esta en el menu y no se pudo recuperar", t));
     }
 
-    /**
-     * Ejecuta la acción y espera hasta que en pantalla aparezca alguna de las frases (o se agote el
-     * tiempo). Devuelve el texto de la pantalla, quien llama comprueba con {@link #expect} que es
-     * la esperada, y si no lo es el mensaje de error incluye lo que habia en pantalla.
-     */
+    /** Ejecuta la acción y espera a que salga alguna de las frases (o se agote el tiempo). Devuelve el texto. */
     private String waitFor(Runnable action, int timeoutMs, String... phrases) {
         return waitUntil(action, timeoutMs, t -> {
             for (String p : phrases) if (has(t, p)) return true;
@@ -275,16 +246,14 @@ public final class LegacyService {
         });
     }
 
-    /** Como {@link #waitFor}, pero con cualquier condicion sobre el texto de la pantalla. */
+    /** Como {@link #waitFor}, con cualquier condición sobre el texto. */
     private String waitUntil(Runnable action, int timeoutMs, Predicate<String> done) {
         return screen.ocr(screen.captureUntil(action, done, timeoutMs));
     }
 
     /**
-     * La pantalla es una pagina completa del listado que empieza en el registro {@code n}: tiene todas
-     * sus filas (18, o las que queden hasta {@code total}). La aplicación dibuja las filas poco a poco y
-     * el aviso "PULSA SPACE" de la página anterior sigue en pantalla mientras tanto, así que ninguna de
-     * las dos cosas basta por separado para saber que la página ha terminado de pintarse.
+     * La página del listado que empieza en el registro n ya está entera. Las filas se pintan poco a poco y el aviso
+     * "PULSA SPACE" de la página anterior sigue visible, así que hay que contar las filas.
      */
     private static Predicate<String> pageStartsAt(int n, int total) {
         int expectedRows = Math.min(ROWS_PER_PAGE, total - n + 1);
@@ -294,7 +263,7 @@ public final class LegacyService {
         };
     }
 
-    /** Ejecuta la acción y devuelve el texto OCR de la pantalla resultante. */
+    /** Ejecuta la acción y devuelve el texto de la pantalla resultante. */
     private String after(Runnable action) {
         return screen.ocr(screen.captureAfter(action));
     }
@@ -304,9 +273,7 @@ public final class LegacyService {
             throw new LegacyException(conCausa("Pantalla inesperada (se esperaba '" + phrase + "')", text));
     }
 
-    /**
-     * Mensaje de error con lo que se ha leído en pantalla y, delante, la causa probable si se ve
-     */
+    /** Mensaje de error con el texto de la pantalla y, delante, la causa probable (DOSBox tapado, sin foco...). */
     private String conCausa(String msg, String screenText) {
         String causa = window.problema();
         return (causa == null ? "" : causa + "\n") + msg + ":\n" + screenText;

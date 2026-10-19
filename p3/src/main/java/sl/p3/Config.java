@@ -6,13 +6,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
 
-/** Configuracion del wrapper. Lee config.properties (opcional) y aplica valores por defecto. */
+/** Configuración del wrapper: config.properties (opcional) con valores por defecto. */
 public final class Config {
     public final String windowTitlePrefix;
     public final int captureX, captureY, captureW, captureH;
     public final int keyDelayMs, pollIntervalMs, changeTimeoutMs, stableTimeoutMs;
-    public final String tessdataPath, ocrLanguage, ocrEngine;
-    public final int ocrScale, ocrBinarize;
+    public final String tessdataPath, ocrLanguage, ocrEngine, ocrPreprocess;
+    public final int ocrScale, ocrBinarize, ocrColumnGap;
     public final boolean ocrInvert;
     public final int port;
     public final Path webRoot;
@@ -29,14 +29,16 @@ public final class Config {
         pollIntervalMs = i(p, "poll.interval.ms", 150);
         changeTimeoutMs = i(p, "change.timeout.ms", 4000);
         stableTimeoutMs = i(p, "stable.timeout.ms", 5000);
-        tessdataPath = p.getProperty("tessdata.path", ".");
+        tessdataPath = p.getProperty("tessdata.path", "tessdata");
         ocrEngine = p.getProperty("ocr.engine", "glyph");
         ocrLanguage = p.getProperty("ocr.language", "spa");
         ocrScale = i(p, "ocr.scale", 2);
         ocrBinarize = i(p, "ocr.binarize", 0);
         ocrInvert = Boolean.parseBoolean(p.getProperty("ocr.invert", "false"));
+        ocrPreprocess = p.getProperty("ocr.preprocess", "clasico");
+        ocrColumnGap = i(p, "ocr.column.gap", 4);
         port = i(p, "server.port", 8090);
-        webRoot = Path.of(p.getProperty("web.root", ".")).toAbsolutePath().normalize();
+        webRoot = Path.of(p.getProperty("web.root", "web")).toAbsolutePath().normalize();
         debugSave = Boolean.parseBoolean(p.getProperty("debug.save", "false"));
         debugDir = Path.of(p.getProperty("debug.dir", "debug"));
     }

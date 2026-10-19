@@ -16,9 +16,9 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.function.Predicate;
 
-/** Captura de pantalla de la ventana de DOSBox + OCR (Tess4J / Tesseract1) + sincronizacion. */
+/** Captura de la ventana de DOSBox, lectura (plantillas o Tesseract) y espera de pantallas. */
 public final class ScreenReader {
-    /** Variantes de preprocesado que se prueban en orden si el texto no pasa la validacion: {escala, umbral}. */
+    /** {escala, umbral} que se prueban con Tesseract si el texto no pasa la validación. */
     private static final int[][] VARIANTS = {{2, 0}, {3, 128}, {3, 160}, {2, 100}};
 
     private final Config cfg;
@@ -58,16 +58,12 @@ public final class ScreenReader {
         return robot.createScreenCapture(region());
     }
 
-    /** Espera hasta que dos capturas consecutivas sean identicas (o se agote stable.timeout.ms). */
+    /** Espera a que dos capturas seguidas sean iguales (como mucho stable.timeout.ms). */
     public BufferedImage captureStable() {
         return waitStable(capture());
     }
 
-    /**
-     * Ejecuta una accion de teclado y devuelve la pantalla resultante: espera a que la imagen CAMBIE
-     * respecto a la anterior (hasta change.timeout.ms) y despues a que se ESTABILICE.
-     * Si la pantalla no cambia (tecla ignorada, misma pantalla) devuelve la captura tras el timeout.
-     */
+    /** Ejecuta la acción y devuelve la pantalla cuando cambia y se estabiliza (o al agotar change.timeout.ms). */
     public BufferedImage captureAfter(Runnable action) {
         BufferedImage before = capture();
         action.run();
@@ -82,10 +78,8 @@ public final class ScreenReader {
     }
 
     /**
-     * Ejecuta la accion y espera hasta que el texto de la pantalla cumpla {@code ready} (p. ej. aparece
-     * la frase de la pregunta siguiente) y se estabilice. Necesario cuando la aplicacion tarda en
-     * responder (la busqueda recorre los 763 registros) y mientras tanto la pantalla no cambia.
-     * Si se agota {@code timeoutMs} devuelve la ultima captura para que el llamador informe del error.
+     * Ejecuta la acción y espera a que el texto cumpla {@code ready} y se estabilice. Hace falta porque la búsqueda
+     * tarda varios segundos sin que cambie la pantalla. Al agotar el tiempo devuelve la última captura.
      */
     public BufferedImage captureUntil(Runnable action, Predicate<String> ready, int timeoutMs) {
         action.run();
@@ -107,7 +101,7 @@ public final class ScreenReader {
             if (same(last, next)) return next;
             last = next;
         }
-        // No es un error (se sigue con la ultima captura), pero si luego falla algo ayuda a saber por qué
+        // No es un error, pero ayuda a entender un fallo posterior.
         System.err.println("Aviso: la pantalla de DOSBox no llego a estabilizarse en " + cfg.stableTimeoutMs
                 + " ms (sigue cambiando). Se usa la ultima captura.");
         return last;
@@ -125,16 +119,12 @@ public final class ScreenReader {
 
     // -------------------------------------------------------------------- OCR
 
-    /** OCR con el preprocesado de la configuracion. */
+    /** Lee la pantalla con el motor y el preprocesado de la configuración. */
     public String ocr(BufferedImage img) {
         return ocrRaw(img, cfg.ocrScale, cfg.ocrBinarize);
     }
 
-    /**
-     * OCR con reintentos: prueba varias combinaciones de escala/binarizado hasta que el texto
-     * cumpla la validacion (por ejemplo, numeracion consecutiva en un listado). Devuelve el ultimo
-     * intento si ninguno es valido.
-     */
+    /** Como {@link #ocr}, pero con Tesseract reintenta otros preprocesados si el texto no es válido. */
     public String ocrBest(BufferedImage img, Predicate<String> valid) {
         String text = ocr(img);
         if (valid.test(text) || glyph != null) return text; // el lector por plantillas es exacto: no hay variantes
@@ -150,13 +140,39 @@ public final class ScreenReader {
             saveDebug(img);
             return glyph.read(img);
         }
-        BufferedImage prepared = preprocess(img, Math.max(1, scale), threshold, cfg.ocrInvert);
+        BufferedImage prepared = cfg.ocrPreprocess.equalsIgnoreCase("rejilla")
+                ? preprocessGrid(img, Math.max(1, scale), cfg.ocrColumnGap)
+                : preprocess(img, Math.max(1, scale), threshold, cfg.ocrInvert);
         saveDebug(prepared);
         try {
             return tess.doOCR(prepared);
         } catch (TesseractException e) {
             throw new LegacyException("Fallo del OCR", e);
         }
+    }
+
+    /**
+     * Preprocesado "rejilla" del modelo dos: escala sin suavizar, texto negro sobre blanco y {@code gap} píxeles
+     * blancos entre columnas, para que Tesseract no parta las letras ni meta espacios. TrainingData usa esta misma
+     * función: si cambia, hay que volver a entrenar.
+     */
+    static BufferedImage preprocessGrid(BufferedImage src, int scale, int gap) {
+        int cw = 8 * scale, w = src.getWidth() * scale, h = src.getHeight() * scale;
+        BufferedImage big = new BufferedImage(w, h, BufferedImage.TYPE_BYTE_GRAY);
+        Graphics2D g = big.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+        g.drawImage(src, 0, 0, w, h, null);
+        g.dispose();
+        int cols = w / cw;
+        BufferedImage out = new BufferedImage(cols * (cw + gap), h, BufferedImage.TYPE_BYTE_GRAY);
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < out.getWidth(); x++) {
+                int col = x / (cw + gap), dx = x % (cw + gap);
+                int v = dx < cw ? 255 - big.getRaster().getSample(col * cw + dx, y, 0) : 255;
+                out.getRaster().setSample(x, y, 0, v);
+            }
+        }
+        return out;
     }
 
     /** Escala, pasa a grises, (opcional) binariza e invierte. */
@@ -189,7 +205,7 @@ public final class ScreenReader {
             Path file = cfg.debugDir.resolve(String.format("ocr-%04d.png", ++debugCounter));
             ImageIO.write(img, "png", file.toFile());
         } catch (IOException e) {
-            // la depuracion nunca debe romper la peticion
+            // la depuración nunca debe romper la petición
         }
     }
 

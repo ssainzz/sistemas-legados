@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/** Que caracteres sabe escribir el robot. Usa la distribucion de teclado de Windows del PC. */
+/** Qué caracteres sabe escribir el robot (con la distribución de teclado de este PC). */
 class KeyboardDriverTest {
 
     @BeforeEach
@@ -33,13 +33,13 @@ class KeyboardDriverTest {
         for (char c : "áÉ@#\"".toCharArray()) assertFalse(KeyboardDriver.isSupported(c), "'" + c + "'");
     }
 
-    /** Todos los nombres de la base de datos de la aplicacion legada se pueden escribir. */
+    /** Se pueden escribir todos los nombres de la base de datos. */
     @Test
     void todosLosNombresDeDatosDat() throws IOException {
         List<String> noSoportados = new ArrayList<>();
         int n = 0;
         for (String line : Files.readAllLines(Path.of("Database-MSDOS/Database/DATOS.DAT"), StandardCharsets.ISO_8859_1)) {
-            if (!line.startsWith("\"")) continue; // ultima linea: fin de fichero (Ctrl+Z)
+            if (!line.startsWith("\"")) continue; // última línea: fin de fichero (Ctrl+Z)
             String nombre = line.substring(1, line.indexOf('"', 1));
             n++;
             for (char c : nombre.toCharArray()) {

@@ -14,20 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Localiza la ventana de DOSBox (Windows, via JNA), la trae al frente y devuelve su area cliente.
+ * Localiza la ventana de DOSBox (JNA), la trae al frente y da su área cliente.
  *
- * Robot escribe en la ventana que tenga el foco y captura pixeles de pantalla, asi que la ventana
- * debe estar visible, sin minimizar y sin otras ventanas encima.
- *
- * Nota: al lanzar database.bat aparecen varias ventanas de DOSBox ("DOSBox Status Window" y la del
- * programa, cuyo titulo es "DOSBox 0.74, Cpu speed: ..."). Aqui se descarta la de estado. Si hay
- * mas de una instancia del programa abierta se usa la primera que devuelva Windows.
- *
- * Las coordenadas de Windows (pixeles fisicos) y las de Robot
- * coinciden porque Main fija sun.java2d.uiScale=1.
+ * Robot escribe en la ventana activa y captura píxeles de la pantalla: DOSBox debe verse entero. Se ignora la
+ * "DOSBox Status Window". Las coordenadas de Windows y las de Robot coinciden porque Main fija sun.java2d.uiScale=1.
  */
 public final class DosboxWindow {
-    /** Funciones de user32 que jna-platform no trae en User32: se declaran aqui. */
+    /** Funciones de user32 que jna-platform no incluye. */
     private interface MoreUser32 extends StdCallLibrary {
         MoreUser32 INSTANCE = Native.load("user32", MoreUser32.class);
 
@@ -41,13 +34,8 @@ public final class DosboxWindow {
     }
 
     private static final int GA_ROOT = 2, MONITOR_DEFAULTTONULL = 0;
-    /** Máximo que se espera a que la ventana deje de estar minimizada tras pedir que se restaure (ms). */
-    private static final int RESTORE_WAIT_MS = 3000;
-    /** Máximo que se espera a que se aparte lo que tapa DOSBox (por ejemplo, un menu que se esta cerrando) (ms). */
-    private static final int COVERED_WAIT_MS = 2000;
-
-    /** Máximo que se espera a que aparezca la ventana de DOSBox (ms). */
-    private static final int WINDOW_WAIT_MS = 20000;
+    /** Esperas máximas (ms): restaurar la ventana, que se aparte lo que la tapa y que aparezca DOSBox. */
+    private static final int RESTORE_WAIT_MS = 3000, COVERED_WAIT_MS = 2000, WINDOW_WAIT_MS = 20000;
 
     private final String titlePrefix;
 
@@ -74,10 +62,7 @@ public final class DosboxWindow {
                         + "'). Ejecuta database.bat primero."));
     }
 
-    /**
-     * Espera hasta {@code timeoutMs} a que exista la ventana. arrancar.bat lanza DOSBox y el servidor a la vez, sin
-     * pausa fija, asi que la primera operación puede llegar antes de que DOSBox haya abierto su ventana.
-     */
+    /** Espera a que exista la ventana: arrancar.bat lanza DOSBox y el servidor a la vez. */
     public HWND await(int timeoutMs) {
         long deadline = System.currentTimeMillis() + timeoutMs;
         Optional<HWND> h = find();
@@ -85,35 +70,27 @@ public final class DosboxWindow {
             sleep(250);
             h = find();
         }
-        return h.orElseGet(this::require); // si sigue sin aparecer, require() lanza el error con la explicacion
+        return h.orElseGet(this::require); // si no aparece, require() lanza el error
     }
 
-    /**
-     * Restaura (si estaba minimizada) y da el foco a la ventana (esperandola si aún no ha aparecido). Después comprueba
-     * que se ve entera ({@link #problema()}): Robot captura los pixeles de la pantalla, y si otra ventana tapa DOSBox se
-     * leería esa.
-     */
+    /** Restaura la ventana si está minimizada, le da el foco y comprueba que se ve entera ({@link #problema()}). */
     public void focus() {
         HWND h = await(WINDOW_WAIT_MS);
         if (MoreUser32.INSTANCE.IsIconic(h)) {
             User32.INSTANCE.ShowWindow(h, WinUser.SW_RESTORE);
             long deadline = System.currentTimeMillis() + RESTORE_WAIT_MS;
             while (MoreUser32.INSTANCE.IsIconic(h) && System.currentTimeMillis() < deadline) sleep(100);
-            sleep(300); // la animación de restaurar sigue un momento despues de dejar de estar minimizada
+            sleep(300); // la animación de restaurar dura un poco más
         }
-        // Windows solo deja pasar al frente a quien acaba de recibir una entrada de teclado.
-        //  Se reintenta hasta que DOSBox sea la ventana activa.
+        // Windows solo deja traer al frente una ventana a quien acaba de pulsar una tecla: se pulsa Alt.
+        // Se suelta después de cambiar de ventana, para que el programa de delante no abra su menú.
         for (int i = 0; i < 5; i++) {
-            // Alt se suelta DESPUES de cambiar de ventana: los programas abren su menu al soltar Alt, asi que el
-            // soltar le llega a DOSBox (donde no hace nada) y no a la ventana que estaba delante.
             MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 0, 0);
             User32.INSTANCE.SetForegroundWindow(h);
             MoreUser32.INSTANCE.keybd_event((byte) 0x12, (byte) 0, 2, 0);
             sleep(150);
             if (h.equals(User32.INSTANCE.GetForegroundWindow())) {
-                // El toque de Alt abre el menu de algunos programas (Opera, por ejemplo), y ese menu, que es una
-                // ventana sin titulo, puede quedar un momento encima de DOSBox. Se cierra solo al cambiar la ventana
-                // activa: se espera a que desaparezca antes de dar el error (PROBLEMAS.md, 31).
+                // Si algo la tapa (p. ej. un menú que se está cerrando), se espera un poco.
                 long deadline = System.currentTimeMillis() + COVERED_WAIT_MS;
                 String p = problema();
                 while (p != null && System.currentTimeMillis() < deadline) {
@@ -129,10 +106,8 @@ public final class DosboxWindow {
     }
 
     /**
-     * Comprueba que el robot puede trabajar: DOSBox existe, no esta minimizado, es la ventana activa (las teclas van a
-     * la ventana activa) y su área cliente se ve entera, sin otra ventana encima ni fuera de la pantalla. Devuelve una
-     * explicación para el usuario, o null si todo esta bien. Se mira en 9 puntos repartidos por el área cliente, lejos
-     * de las esquinas (por el redondeo).
+     * Explica por qué el robot no puede trabajar, o null si puede: DOSBox debe existir, no estar minimizado, ser la
+     * ventana activa y verse entero (se mira qué ventana hay en 9 puntos de su área).
      */
     public String problema() {
         Optional<HWND> found = find();
@@ -159,7 +134,7 @@ public final class DosboxWindow {
         return null;
     }
 
-    /** "'titulo'" de una ventana, para los mensajes de error. */
+    /** Título de una ventana, para los mensajes de error. */
     private static String describe(HWND h) {
         if (h == null) return "ninguna";
         char[] buf = new char[512];

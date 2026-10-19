@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Textos de ejemplo tomados de las pantallas reales de la aplicacion legada. */
+/** Textos sacados de pantallas reales de la aplicación. */
 class ScreenParserTest {
 
     @Test
@@ -29,7 +29,7 @@ class ScreenParserTest {
         assertEquals("A", r.cinta());
     }
 
-    /** Nombres con signos y minusculas tal como salen en "ES ESTE?" (resultados reales de la busqueda). */
+    /** Nombres con signos y minúsculas, tal como salen en "ES ESTE?". */
     @Test
     void programaPorNombreConSignosYMinusculas() {
         ProgramRecord r = ScreenParser.parseSingle("    87  - KNIGHT'S LORE   VIDEOAVENTURA   CINTA:G-U\nES ESTE ? (S/N)  ?")

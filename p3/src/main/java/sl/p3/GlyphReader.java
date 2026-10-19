@@ -10,15 +10,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Lector de pantalla por plantillas de caracter (alternativa al OCR de Tesseract).
+ * Lector de pantalla por plantillas (motor por defecto).
  *
- * DOSBox dibuja el modo texto de GW-BASIC como una cuadrilla exacta de 80x25 celdas de 8x16 pixeles
- * y siempre con la misma fuente, sin suavizado. En lugar de "reconocer" formas, cada celda se compara
- * con el dibujo de cada caracter conocido (font8x16.txt) y se elige el de menos pixeles distintos.
- * El resultado es exacto y no depende de escala, binarizado ni entrenamiento.
- *
- * Una celda que no se parece a nada (distancia > MAX_DISTANCE) se devuelve como '#', para que un
- * caracter desconocido se note en lugar de convertirse en otro distinto.
+ * DOSBox pinta el texto en una cuadrícula de 80x25 celdas de 8x16 píxeles, siempre con la misma fuente y sin
+ * suavizado. Cada celda se compara con el dibujo de cada carácter (font8x16.txt) y gana el de menos píxeles distintos.
+ * Si ninguno se parece (distancia > MAX_DISTANCE) devuelve '#', para que el fallo se note.
  */
 public final class GlyphReader {
     public static final int COLS = 80, ROWS = 25, CELL_W = 8, CELL_H = 16;
@@ -46,7 +42,7 @@ public final class GlyphReader {
         }
     }
 
-    /** Texto de la pantalla: 25 lineas de 80 caracteres, sin espacios al final de cada linea. */
+    /** Texto de la pantalla: 25 líneas, sin espacios al final. */
     public String read(BufferedImage img) {
         if (img.getWidth() != COLS * CELL_W || img.getHeight() != ROWS * CELL_H) {
             throw new LegacyException("La captura mide " + img.getWidth() + "x" + img.getHeight()

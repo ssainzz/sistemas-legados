@@ -11,12 +11,12 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Prueba el lector por plantillas con pantallas reales de DOSBox guardadas en corpus/. */
+/** Prueba el lector por plantillas con pantallas reales de DOSBox guardadas en src/test/resources/corpus. */
 class GlyphReaderTest {
     private final GlyphReader reader = new GlyphReader();
 
     private String read(String file) throws Exception {
-        BufferedImage img = ImageIO.read(new File("corpus/" + file));
+        BufferedImage img = ImageIO.read(new File("src/test/resources/corpus/" + file));
         return reader.read(img);
     }
 
@@ -58,11 +58,11 @@ class GlyphReaderTest {
             expected = rows.get(rows.size() - 1).numero() + 1;
         }
         assertEquals(763, all.size());
-        // Se respetan las minusculas y los signos de la aplicacion original.
+        // Se respetan las minúsculas y los signos.
         assertEquals("BARRY McGUIGAN'S BOXING", all.get(235).nombre());
         assertEquals("FRIDAY 13th", all.get(240).nombre());
         assertEquals("---", all.get(612).tipo()); // LES FLICS: sin tipo
-        // Un programa en varias cintas pertenece a cada una de ellas, y "4" no esta en "45".
+        // Un programa en varias cintas está en cada una, y "4" no está en "45".
         assertTrue(all.get(234).estaEnCinta("Q") && all.get(234).estaEnCinta("25"));
         assertFalse(all.get(234).estaEnCinta("2"));
         assertEquals("MUGSY", all.get(0).nombre());
