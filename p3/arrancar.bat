@@ -1,6 +1,6 @@
 @echo off
 rem ---- Arranque con doble clic ----
-rem 1) Busca Java 17+ y comprueba que el puerto está libre, antes de abrir nada.
+rem 1) Busca Java 17+ (primero el de jre\, que va en el ZIP) y comprueba que el puerto está libre, antes de abrir nada.
 rem 2) Abre DOSBox con la aplicación y dosbox-wrapper.conf (ventana fija de 640x400).
 rem 3) Arranca el servidor, que espera a DOSBox y abre el navegador.
 rem No se modifica nada de Database-MSDOS.
@@ -14,9 +14,11 @@ if not exist "target\wrapper-legacy.jar" (
 )
 
 rem ---- Java 17+ ----
-rem El java del PATH puede ser un Java 8, con el que el .jar no arranca. Se usa el primero de versión 17 o mayor
-rem entre JAVA_HOME, Program Files y el PATH.
+rem El ZIP de la entrega lleva su propio Java en jre\ (lo crea empaquetar.ps1), así que no hay que instalar nada.
+rem Sin jre\ (por ejemplo, en el repositorio) se usa el primero de versión 17 o mayor entre JAVA_HOME, Program Files
+rem y el PATH: el java del PATH puede ser un Java 8, con el que el .jar no arranca.
 set "JAVA="
+call :probar_java "%~dp0jre\bin\java.exe"
 if defined JAVA_HOME call :probar_java "%JAVA_HOME%\bin\java.exe"
 for /d %%J in ("%ProgramFiles%\Java\*" "%ProgramFiles%\Eclipse Adoptium\*" "%ProgramFiles%\Microsoft\jdk-*" "%ProgramFiles%\OpenJDK\*" "%ProgramFiles%\Zulu\*" "%ProgramFiles%\Amazon Corretto\*" "%ProgramFiles%\BellSoft\*") do (
   call :probar_java "%%~J\bin\java.exe"
@@ -26,6 +28,7 @@ for /f "delims=" %%J in ('where java 2^>nul') do call :probar_java "%%~J"
 if not defined JAVA (
   echo.
   echo ERROR: no se ha encontrado Java 17 o superior, y la practica lo necesita.
+  echo        Falta la carpeta jre\ que trae el ZIP de la entrega ^(se crea con empaquetar.ps1^).
   if defined VIEJO echo        Solo hay un Java mas antiguo ^(version %VIEJO%^): %VIEJO_EXE%
   echo   1. Instala un JDK 17 o superior, por ejemplo desde https://adoptium.net/
   echo   2. Vuelve a hacer doble clic en arrancar.bat. Si lo has instalado en otra carpeta,

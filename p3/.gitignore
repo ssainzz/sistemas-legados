@@ -8,3 +8,6 @@ target/
 debug/
 # Datos de entrenamiento de Tesseract (se generan con el comando cajas)
 entrenamiento/datos/
+# Java reducido y ZIP de la entrega (se generan con empaquetar.ps1)
+jre/
+dist/
