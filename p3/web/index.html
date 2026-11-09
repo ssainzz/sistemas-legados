@@ -87,7 +87,7 @@
         <form id="name-form" class="bg-[#A3C4BC] border-2 border-black brutal-shadow p-3 flex flex-col gap-2">
             <label for="name-input" class="text-xs font-bold uppercase">Buscar por Nombre</label>
             <div class="flex gap-2">
-                <input type="text" id="name-input" autocomplete="off" minlength="3" maxlength="40" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: FEUD (mín. 3 caracteres)">
+                <input type="text" id="name-input" autocomplete="off" maxlength="40" class="flex-1 bg-white border-2 border-black text-sm px-2 py-1.5 outline-none focus:bg-[#f8f9fa] font-mono" placeholder="Ej: FEUD">
                 <button type="submit" class="brutal-btn bg-white border-2 border-black text-sm font-bold px-4 py-1.5 brutal-shadow-sm uppercase disabled:opacity-50">
                     Buscar
                 </button>
@@ -274,16 +274,13 @@
             // Tal cual: la aplicación distingue mayúsculas ("FRIDAY 13th").
             const name = $('name-input').value.trim();
             if (!name) return;
-            if (name.length < 3) {
-                showMessage('Escribe al menos 3 caracteres: la aplicación busca el texto en cualquier parte del nombre.', true);
-                return;
-            }
             if (!/^[A-Za-z0-9 \-'.!&]+$/.test(name)) {
                 showMessage('El nombre solo puede llevar letras sin acentos, números, espacios y los signos - \' . ! &', true);
                 return;
             }
             run('Programa «' + name + '»', '/api/programa?nombre=' + encodeURIComponent(name),
-                'Buscando «' + name + '» en la base de datos (con varios resultados puede tardar un rato)…',
+                'Buscando «' + name + '» en la base de datos (busca el texto en cualquier parte del nombre: '
+                + (name.length < 3 ? 'con tan pocas letras saldrán muchos y tardará varios minutos' : 'con varios resultados puede tardar un rato') + ')…',
                 { empty: 'No hay ningún programa que contenga «' + name + '». Ojo: distingue mayúsculas.' });
         });
 

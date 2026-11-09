@@ -23,8 +23,10 @@ public final class LegacyService {
     private static final int ROWS_PER_PAGE = 18;
     /** Esperas máximas (ms): respuesta normal y búsqueda por nombre, que recorre los registros. */
     private static final int SHORT_MS = 8000, SEARCH_MS = 30000;
-    /** Mínimo de caracteres del nombre: la búsqueda es por subcadena y con menos sale casi todo. */
-    public static final int MIN_NOMBRE = 3;
+    /**
+     * Mínimo de caracteres del nombre. Es 1 porque hay un programa que se llama "V"
+     */
+    public static final int MIN_NOMBRE = 1;
     /** Espera máxima al menú en la primera operación, mientras DOSBox arranca (ms). */
     private static final int STARTUP_MS = 20000;
     /** Si ya se hizo alguna operación (solo la primera espera el arranque). */
@@ -74,7 +76,7 @@ public final class LegacyService {
     public List<ProgramRecord> buscarPorNombre(String nombre) {
         String name = nombre.trim();
         if (name.length() < MIN_NOMBRE)
-            throw new IllegalArgumentException("El nombre debe tener al menos " + MIN_NOMBRE + " caracteres");
+            throw new IllegalArgumentException("Falta el nombre del programa");
         for (char c : name.toCharArray()) {
             if (!KeyboardDriver.isSupported(c))
                 throw new IllegalArgumentException("Caracter no soportado en el nombre: '" + c + "'");
